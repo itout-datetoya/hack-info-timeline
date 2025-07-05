@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
@@ -34,11 +35,11 @@ func (g *telegramTransferPostGateway) GetPosts(ctx context.Context) ([]*gateway.
 		Username: g.channelUsername,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("gateway A: failed to resolve username %s: %w", g.channelUsername, err)
+		return nil, fmt.Errorf("failed to resolve username %s: %w", g.channelUsername, err)
 	}
 	channel, ok := resolved.Chats[0].(*tg.Channel)
 	if !ok {
-		return nil, fmt.Errorf("gateway A: resolved peer is not a channel")
+		return nil, fmt.Errorf("resolved peer is not a channel")
 	}
 	inputPeer := channel.AsInputPeer()
 	g.channelPeer = inputPeer
@@ -50,7 +51,7 @@ func (g *telegramTransferPostGateway) GetPosts(ctx context.Context) ([]*gateway.
 		Limit: 100,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("gateway A: failed to get channel history: %w", err)
+		return nil, fmt.Errorf("failed to get channel history: %w", err)
 	}
 
 	// 取得した投稿の内、送金情報を含むものをTransferPostに変換
@@ -62,7 +63,7 @@ func (g *telegramTransferPostGateway) convertMessages(history tg.MessagesMessage
 	// 取得したデータを投稿のスライスに変換
 	channelMessages, ok := history.(*tg.MessagesChannelMessages)
 	if !ok {
-		return nil, fmt.Errorf("gateway A: failed to cast history to ChannelMessages")
+		return nil, fmt.Errorf("failed to cast history to ChannelMessages")
 	}
 
 	var posts []*gateway.TransferPost
@@ -70,15 +71,76 @@ func (g *telegramTransferPostGateway) convertMessages(history tg.MessagesMessage
 		// チャンネルの投稿か確認
 		if message, ok := msg.(*tg.Message); ok && message.Message != "" {
 			
-			// ToDo parse message
-			
-			posts = append(posts, &gateway.TransferPost{
-				Token:	"",
-				Amount:	"",
-				From:	"",
-				To:		"",
-			})
+			// 投稿から送金情報を取得
+			post, err := g.parseTransferMessage(message.Message)
+			if err != nil {
+				return nil, err
+			}
+
+			// 投稿からタグを取得
+			tagNames := g.extractTags(message.Message, message.Entities)
+			post.TagNames = tagNames
+
+			posts = append(posts, post)
 		}
 	}
 	return posts, nil
+}
+
+// 投稿の形式からパースして送金情報を取得
+func (g *telegramTransferPostGateway) parseTransferMessage(message string) (*gateway.TransferPost, error) {
+	// スペースで分割
+	tokens := strings.Fields(message)
+
+	found := false
+	var post gateway.TransferPost
+
+	// "transferred" を基準にパース
+	for i, token := range tokens {
+		if token == "transferred" && i > 1 && i+3 < len(tokens) {
+			// "transferred" の前の単語が「送金額」と「トークン」
+			post.Amount = strings.ReplaceAll(tokens[i-2], ",", "")
+			post.Token = strings.TrimPrefix(tokens[i-1], "#")
+
+			// "transferred" の後の単語が "from", "送金元", "to", "送金先"
+			if tokens[i+1] == "from" && tokens[i+3] == "to" {
+				post.From = strings.TrimPrefix(tokens[i+2], "#")
+				post.To = strings.TrimPrefix(tokens[i+4], "#")
+				found = true
+				break
+			}
+		}
+	}
+
+	if !found {
+		return nil, errors.New("TransferPost pattern not found in message")
+	}
+
+	return &post, nil
+}
+
+// 投稿に付けられたタグを取得
+func (g *telegramTransferPostGateway) extractTags (message string, entities []tg.MessageEntityClass) []string {
+	var tags []string
+	if len(entities) == 0 {
+		return tags
+	}
+
+	// UTF-16オフセットに対応するため、メッセージをruneのスライスに変換
+	messageRunes := []rune(message)
+
+	for _, entity := range entities {
+		// エンティティがハッシュタグ型か判定
+		if e, isHashtag := entity.(*tg.MessageEntityHashtag); isHashtag {
+			// OffsetとLengthを使ってハッシュタグ部分を取得
+			start := e.Offset
+			end := e.Offset + e.Length
+			if start >= 0 && end <= len(messageRunes) {
+				tag := string(messageRunes[start:end])
+				cleanTag := strings.TrimPrefix(tag, "#")
+				tags = append(tags, cleanTag)
+			}
+		}
+	}
+	return tags
 }
