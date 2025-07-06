@@ -100,11 +100,9 @@ func (uc *HackingUsecase) processSinglePost(ctx context.Context, post *gateway.H
 	ReportTime:	time.Now(),
 	}
 
-	var tagNames []string
-	tagNames = append(extractedInfo.Tokens, extractedInfo.Protocol)
 
 	// DBに保存
-	_, err = uc.repo.Store(ctx, infoToStore, tagNames)
+	_, err = uc.repo.Store(ctx, infoToStore, extractedInfo.TagNames)
 	if err != nil {
 		return fmt.Errorf("database store failed: %w", err)
 	}

@@ -27,7 +27,7 @@ type ExtractedHackingInfo struct {
 	Network		string
 	Amount		string
 	TxHash		string
-	Tokens		[]string
+	TagNames	[]string
 }
 
 // Telegram APIとのハッキング情報の通信を抽象化
