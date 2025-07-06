@@ -38,9 +38,10 @@ func main() {
 
 	telegramAppIDStr := os.Getenv("TELEGRAM_APP_ID")
 	telegramAppHash := os.Getenv("TELEGRAM_APP_HASH")
-	telegramChannel := os.Getenv("TELEGRAM_CHANNEL_USERNAME")
+	telegramHackingChannel := os.Getenv("TELEGRAM_HACKING_CHANNEL_USERNAME")
+	telegramTransferChannel := os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAME")
 
-	if telegramAppIDStr == "" || telegramAppHash == "" || telegramChannel == "" {
+	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannel == "" || telegramTransferChannel == ""{
 		log.Fatal("Telegram user client environment variables not fully set.")
 	}
 	telegramAppID, err := strconv.Atoi(telegramAppIDStr)
@@ -63,37 +64,42 @@ func main() {
 	defer stop()
 
 	hackingRepo := datastore.NewHackingRepository(db)
+	transferRepo := datastore.NewTransferRepository(db)
 
 	// ToDo Telegram Client Managerの初期化と接続
-	telegramGateway, err := gateway.NewTelegramGateway(
+	telegramClientManager := gateway.NewTelegramClientManager(
 		telegramAppID,
 		telegramAppHash,
-		telegramChannel,
 	)
-	if err != nil {
-		log.Fatalf("Failed to create Telegram Gateway: %v", err)
-	}
+
 	// Runメソッドを呼び出して接続を開始
-	if err := telegramGateway.(*gateway.telegramGateway).Run(ctx); err != nil {
+	if err := telegramClientManager.Run(ctx); err != nil {
 		log.Fatalf("Failed to run Telegram Gateway: %v", err)
 	}
 	log.Println("Telegram client connected and ready.")
 
-	// ToDo Telegram Hacking Gatewayの初期化
-
-	// ToDo Telegram Transfer Gatewayの初期化
-
-	// ToDo Gemini Gatewayの初期化
+	// 各gatewayの初期化
+	telegramHackingGateway := gateway.NewTelegramHackingPostGateway(
+		telegramClientManager,
+		telegramHackingChannel,
+	)
+	telegramTransferGateway := gateway.NewTelegramTransferPostGateway(
+		telegramClientManager,
+		telegramTransferChannel,
+	)
 	geminiGateway, err := gateway.NewGeminiGateway(ctx, geminiAPIKey)
 	if err != nil {
 		log.Fatalf("Failed to initialize Gemini Gateway: %v", err)
 	}
 
-	hackingUsecase := usecase.NewHackingUsecase(hackingRepo, telegramGateway, geminiGateway)
+	// 各ハンドラーの初期化
+	hackingUsecase := usecases.NewHackingUsecase(hackingRepo, telegramHackingGateway, geminiGateway)
+	transferUsecase := usecases.NewTransferUsecase(transferRepo, telegramTransferGateway)
 	hackingHandler := if_http.NewHackingHandler(hackingUsecase)
+	transferHandler := if_http.NewTransferHandler(transferUsecase)
 
 	// ルーターとHTTPサーバーのセットアップ
-	router := if_http.NewRouter(hackingHandler)
+	router := if_http.NewRouter(*hackingHandler, *transferHandler)
 	srv := &http.Server{
 		Addr:    ":8080",
 		Handler: router,
@@ -120,8 +126,13 @@ func main() {
 	}
 
 	// Telegramクライアントを停止
-	if err := telegramGateway.Stop(); err != nil {
+	if err := telegramClientManager.Stop(); err != nil {
 		log.Println("Failed to stop telegram client:", err)
+	}
+
+	// Geminiクライアントを停止
+	if err := geminiGateway.Stop(); err != nil {
+		log.Println("Failed to stop gemini client:", err)
 	}
 
 	log.Println("Server exiting")

@@ -11,6 +11,7 @@ import (
 )
 
 type geminiGateway struct {
+	client *genai.Client
 	model *genai.GenerativeModel
 }
 
@@ -26,7 +27,11 @@ func NewGeminiGateway(ctx context.Context, apiKey string) (gateway.GeminiGateway
 
 	// 使用するモデルを指定
 	model := client.GenerativeModel("gemini-2.5-flash")
-	return &geminiGateway{model: model}, nil
+	return &geminiGateway{client: client, model: model}, nil
+}
+
+func (g *geminiGateway) Stop() error {
+	return g.client.Close()
 }
 
 func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.HackingPost) (*gateway.ExtractedHackingInfo, error) {
