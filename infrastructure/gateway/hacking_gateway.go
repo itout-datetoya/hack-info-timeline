@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
@@ -16,6 +17,7 @@ type telegramHackingPostGateway struct {
 	channelUsername string
 	channel     	*tg.Channel
 	lastMessageID	int
+	mu            	sync.Mutex
 }
 
 // 新しいtelegramHackingPostGatewayを生成
@@ -44,6 +46,8 @@ func (g *telegramHackingPostGateway) GetPosts(ctx context.Context) ([]*gateway.H
 	g.channel = channel
 	inputPeer := channel.AsInputPeer()
 
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	// 最後に取得した投稿以降、最新100件の投稿を取得
 	history, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
 		Peer:  inputPeer,
