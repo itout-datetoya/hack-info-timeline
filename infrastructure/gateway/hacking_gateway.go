@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
@@ -79,22 +80,27 @@ func (g *telegramHackingPostGateway) convertMessages(ctx context.Context, histor
 					id := []tg.InputMessageClass{&tg.InputMessageID{ID: replyToID}}
 					// リプライ先の投稿を取得
 					inputChannel := g.channel.AsInput()
-					replyedMessage, err := g.manager.api.ChannelsGetMessages(ctx, &tg.ChannelsGetMessagesRequest{
+					repliedMsgs, err := g.manager.api.ChannelsGetMessages(ctx, &tg.ChannelsGetMessagesRequest{
 						Channel: inputChannel,
 						ID:      id,
 					})
 					if err != nil {
 						return nil, fmt.Errorf("gateway A: failed to get replied message: %w", err)
 					}
+					repliedMessages, _ := repliedMsgs.(*tg.MessagesChannelMessages)
+					repliedMessage, _ := repliedMessages.Messages[0].(*tg.Message)
 
-					// ToDo parse replyed message
-
-					posts = append(posts, &gateway.HackingPost{
-						Text:      message.Message,
-						Network: "",
-						Amount: "",
-						TxHash: "",
-					})
+					// リプライ先にさらにリプライがあればその投稿は使用しない
+					if _, ok := repliedMessage.GetReplyTo(); !ok {
+						// リプライ先からハッキング情報を取得
+						post, err := g.parseHackingMessage(repliedMessage.Message)
+						if err != nil {
+							return nil, err
+						}
+						// 投稿内容を添付
+						post.Text = message.Message
+						posts = append(posts, post)
+					}
 				}
 			}
 			// 最後に取得した投稿のIDを更新
@@ -104,4 +110,39 @@ func (g *telegramHackingPostGateway) convertMessages(ctx context.Context, histor
 		}
 	}
 	return posts, nil
+}
+
+// 投稿の形式からパースしてハッキング情報を取得
+func (g *telegramHackingPostGateway) parseHackingMessage(message string) (*gateway.HackingPost, error) {
+	// スペースで分割
+	tokens := strings.Fields(message)
+
+	found := false
+	var post gateway.HackingPost
+
+	// "Network:", "Exploit:", "Balance" を基準にパース
+	for i, token := range tokens {
+		if token == "Network:" && i < len(tokens) {
+			// "Network:" の次の単語が「ネットワーク」
+			post.Network = tokens[i+1]
+			continue
+		}
+		if token == "Exploit:" && i < len(tokens) {
+			// "Exploit:" の次の単語が「TX Hash」
+			post.TxHash = tokens[i+1]
+			continue
+		}
+		if token == "Balance" && i+1 < len(tokens) {
+			// "Balance" の2つ先の単語が「送金額」
+			post.Amount = tokens[i+2]
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, errors.New("HackingPost pattern not found in message")
+	}
+
+	return &post, nil
 }
