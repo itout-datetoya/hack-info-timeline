@@ -82,6 +82,11 @@ func (g *telegramTransferPostGateway) convertMessages(history tg.MessagesMessage
 			post.TagNames = tagNames
 
 			posts = append(posts, post)
+
+			// 最後に取得した投稿のIDを更新
+			if message.ID > g.lastMessageID {
+				g.lastMessageID = message.ID
+			}
 		}
 	}
 	return posts, nil
