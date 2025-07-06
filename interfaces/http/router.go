@@ -2,7 +2,7 @@ package http
 
 import "github.com/gin-gonic/gin"
 
-func NewRouter(handler *HackingHandler) *gin.Engine {
+func NewRouter(hackingHandler HackingHandler, transferHandler TransferHandler) *gin.Engine {
 	router := gin.Default()
 	router.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -16,9 +16,12 @@ func NewRouter(handler *HackingHandler) *gin.Engine {
 	})
 	api := router.Group("/v1")
 	{
-		api.GET("/infos", handler.GetTimeline)
-		api.GET("/tags", handler.ListTags)
-		api.POST("/simulate-scraping", handler.SimulateScraping)
+		api.GET("/hacking/infos", hackingHandler.GetHackingTimeline)
+		api.GET("/transfer/infos", transferHandler.GetTransferTimeline)
+		api.GET("/hacking/tags", hackingHandler.ListHackingTags)
+		api.GET("/transfer/tags", transferHandler.ListTransferTags)
+		api.POST("/hacking/simulate-scraping", hackingHandler.SimulateScraping)
+		api.POST("/transfer/simulate-scraping", transferHandler.SimulateScraping)
 	}
 	return router
 }

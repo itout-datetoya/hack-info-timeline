@@ -10,21 +10,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type HackingHandler struct {
-	uc *usecases.HackingUsecase
+type TransferHandler struct {
+	transferUsecase *usecases.TransferUsecase
 }
 
-func NewHackingHandler(uc *usecases.HackingUsecase) *HackingHandler {
-	 return &HackingHandler{uc: uc} 
+func NewTransferHandler(transferUsecase *usecases.TransferUsecase) *TransferHandler {
+	 return &TransferHandler{transferUsecase: transferUsecase} 
 	}
 
-func (h *HackingHandler) GetTimeline(c *gin.Context) {
+func (h *TransferHandler) GetTransferTimeline(c *gin.Context) {
 	tagsQuery := c.Query("tags")
 	var tags []string
 	if tagsQuery != "" {
 		tags = strings.Split(tagsQuery, ",")
 	}
-	infos, err := h.uc.GetTimeline(c.Request.Context(), tags)
+	infos, err := h.transferUsecase.GetTimeline(c.Request.Context(), tags)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 		return
@@ -32,8 +32,8 @@ func (h *HackingHandler) GetTimeline(c *gin.Context) {
 	c.JSON(http.StatusOK, infos)
 }
 
-func (h *HackingHandler) ListTags(c *gin.Context) {
-	tags, err := h.uc.GetAllTags(c.Request.Context())
+func (h *TransferHandler) ListTransferTags(c *gin.Context) {
+	tags, err := h.transferUsecase.GetAllTags(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 		return
@@ -41,8 +41,8 @@ func (h *HackingHandler) ListTags(c *gin.Context) {
 	c.JSON(http.StatusOK, tags)
 }
 
-func (h *HackingHandler) SimulateScraping(c *gin.Context) {
-	processedCount, errs := h.uc.ScrapeAndStore(c.Request.Context())
+func (h *TransferHandler) SimulateScraping(c *gin.Context) {
+	processedCount, errs := h.transferUsecase.ScrapeAndStore(c.Request.Context())
 
 	if len(errs) > 0 {
 		// エラーはサーバー側でログに記録
