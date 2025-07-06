@@ -41,7 +41,7 @@ func (h *TransferHandler) ListTransferTags(c *gin.Context) {
 	c.JSON(http.StatusOK, tags)
 }
 
-func (h *TransferHandler) SimulateScraping(c *gin.Context) {
+func (h *TransferHandler) ScrapeNewInfos(c *gin.Context) {
 	processedCount, errs := h.transferUsecase.ScrapeAndStore(c.Request.Context())
 
 	if len(errs) > 0 {

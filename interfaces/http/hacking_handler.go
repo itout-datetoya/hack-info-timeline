@@ -41,7 +41,7 @@ func (h *HackingHandler) ListHackingTags(c *gin.Context) {
 	c.JSON(http.StatusOK, tags)
 }
 
-func (h *HackingHandler) SimulateScraping(c *gin.Context) {
+func (h *HackingHandler) ScrapeNewInfos(c *gin.Context) {
 	processedCount, errs := h.hackingUsecase.ScrapeAndStore(c.Request.Context())
 
 	if len(errs) > 0 {

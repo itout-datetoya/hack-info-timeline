@@ -20,8 +20,8 @@ func NewRouter(hackingHandler HackingHandler, transferHandler TransferHandler) *
 		api.GET("/transfer/infos", transferHandler.GetTransferTimeline)
 		api.GET("/hacking/tags", hackingHandler.ListHackingTags)
 		api.GET("/transfer/tags", transferHandler.ListTransferTags)
-		api.POST("/hacking/simulate-scraping", hackingHandler.SimulateScraping)
-		api.POST("/transfer/simulate-scraping", transferHandler.SimulateScraping)
+		api.POST("/hacking/scrape-new-infos", hackingHandler.ScrapeNewInfos)
+		api.POST("/transfer/scrape-new-infos", transferHandler.ScrapeNewInfos)
 	}
 	return router
 }
