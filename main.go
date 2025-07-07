@@ -38,6 +38,8 @@ func main() {
 
 	telegramAppIDStr := os.Getenv("TELEGRAM_APP_ID")
 	telegramAppHash := os.Getenv("TELEGRAM_APP_HASH")
+	phone := os.Getenv("TELEGRAM_PHONE")
+	password := os.Getenv("TELEGRAM_PASSWORD")
 	telegramHackingChannel := os.Getenv("TELEGRAM_HACKING_CHANNEL_USERNAME")
 	telegramTransferChannel := os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAME")
 
@@ -73,7 +75,7 @@ func main() {
 	)
 
 	// Runメソッドを呼び出して接続を開始
-	if err := telegramClientManager.Run(ctx); err != nil {
+	if err := telegramClientManager.Run(ctx, phone, password); err != nil {
 		log.Fatalf("Failed to run Telegram Gateway: %v", err)
 	}
 	log.Println("Telegram client connected and ready.")

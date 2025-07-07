@@ -36,7 +36,7 @@ func NewTelegramClientManager(appID int, appHash string) *TelegramClientManager 
 
 // クライアントをバックグラウンドで実行し、接続と認証を処理
 // 接続が確立されるまでブロック
-func (m *TelegramClientManager) Run(ctx context.Context) error {
+func (m *TelegramClientManager) Run(ctx context.Context, phone string, password string) error {
 	ctx, m.stop = context.WithCancel(ctx)
 
 	ready := make(chan struct{})
@@ -53,7 +53,7 @@ func (m *TelegramClientManager) Run(ctx context.Context) error {
 
 			// 未認証の場合、電話番号で認証フローを開始
 			if !status.Authorized {
-				if err := m.authFlow(ctx); err != nil {
+				if err := m.authFlow(ctx, phone, password); err != nil {
 					return err
 				}
 			}
@@ -93,9 +93,8 @@ func (m *TelegramClientManager) Run(ctx context.Context) error {
 }
 
 // 対話的な認証処理
-func (m *TelegramClientManager) authFlow(ctx context.Context) error {
-	phone := os.Getenv("TELEGRAM_PHONE")
-	password := os.Getenv("TELEGRAM_PASSWORD")
+func (m *TelegramClientManager) authFlow(ctx context.Context, phone string, password string) error {
+
 	flow := auth.NewFlow(
 		// 電話番号に届いた認証コードを入力
 		auth.Constant(phone, password, auth.CodeAuthenticatorFunc(
