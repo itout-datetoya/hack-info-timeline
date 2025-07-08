@@ -26,7 +26,7 @@ func NewGeminiGateway(ctx context.Context, apiKey string) (gateway.GeminiGateway
 	}
 
 	// 使用するモデルを指定
-	model := client.GenerativeModel("gemini-2.5-flash")
+	model := client.GenerativeModel("gemini-2.0-flash-lite")
 	return &geminiGateway{client: client, model: model}, nil
 }
 
@@ -128,8 +128,8 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 		return nil, fmt.Errorf("unexpected response part type: %T", protocolNamePart)
 	}
 
-	// 表記ゆれ防止のため小文字にしてカンマで分割
-	tokens := strings.Split(strings.ToLower(string(tokensStr)), ",")
+	// カンマで分割
+	tokens := strings.Split(string(tokensStr), ",")
 
 	extractedInfo.Protocol = protocolNames[0]
 	extractedInfo.Network = post.Network
