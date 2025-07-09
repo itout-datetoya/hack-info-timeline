@@ -7,12 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"strings"
 
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/telegram/auth"
 	"github.com/gotd/td/tg"
-	"golang.org/x/term"
 )
 
 // gotdクライアント接続を管理する構造体
@@ -26,6 +26,8 @@ type TelegramClientManager struct {
 // gotdクライアントをセットアップして、TelegramClientManagerを生成
 func NewTelegramClientManager(appID int, appHash string) *TelegramClientManager {
 	sessionDir := ".td"
+    os.MkdirAll(sessionDir, 0755)
+
 	client := telegram.NewClient(appID, appHash, telegram.Options{
 		SessionStorage: &session.FileStorage{
 			Path: filepath.Join(sessionDir, "session.json"),
@@ -54,7 +56,7 @@ func (m *TelegramClientManager) Run(ctx context.Context, phone string, password 
 			// 未認証の場合、電話番号で認証フローを開始
 			if !status.Authorized {
 				if err := m.authFlow(ctx, phone, password); err != nil {
-					return err
+					return fmt.Errorf("failed auth flow: %w \n please set sent auth code in telegram message", err)
 				}
 			}
 
@@ -92,21 +94,25 @@ func (m *TelegramClientManager) Run(ctx context.Context, phone string, password 
 	}
 }
 
-// 対話的な認証処理
-func (m *TelegramClientManager) authFlow(ctx context.Context, phone string, password string) error {
+// 認証処理
+func (m *TelegramClientManager) authFlow(ctx context.Context, phone string, code string) error {
 
-	flow := auth.NewFlow(
-		// 電話番号に届いた認証コードを入力
-		auth.Constant(phone, password, auth.CodeAuthenticatorFunc(
-			func(ctx context.Context, sentCode *tg.AuthSentCode) (string, error) {
-				fmt.Print("Enter auth code: ")
-				code, err := term.ReadPassword(0)
-				return string(code), err
-			},
-		)),
-		auth.SendCodeOptions{},
-	)
-	return m.client.Auth().IfNecessary(ctx, flow)
+	sentCode, err := m.client.Auth().SendCode(ctx, phone, auth.SendCodeOptions{})
+	if err != nil {
+		return err
+	}
+	authSendCode, ok :=sentCode.(*tg.AuthSentCode)
+	if !ok {
+		return fmt.Errorf("failed to get auth code")
+	}
+	hash := authSendCode.PhoneCodeHash
+
+	_, signInErr := m.client.Auth().SignIn(ctx, phone, strings.TrimSpace(code), hash)
+	if signInErr != nil {
+		return err
+	}
+
+	return nil
 }
 
 // クライアントの接続を安全に停止

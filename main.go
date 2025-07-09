@@ -28,23 +28,25 @@ func main() {
 	}
 
 	// 設定の読み込み
-	// ToDO:DB, Gemini関連
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	dbUser := os.Getenv("DB_USER")
 	dbPass := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
+
 	geminiAPIKey := os.Getenv("GEMINI_API_KEY")
 
 	telegramAppIDStr := os.Getenv("TELEGRAM_APP_ID")
 	telegramAppHash := os.Getenv("TELEGRAM_APP_HASH")
-	phone := os.Getenv("TELEGRAM_PHONE")
-	password := os.Getenv("TELEGRAM_PASSWORD")
+	telegramPhoneNumber := os.Getenv("TELEGRAM_PHONE_NUMBER")
+	teregramCode := os.Getenv("TELEGRAM_CODE")
 	telegramHackingChannel := os.Getenv("TELEGRAM_HACKING_CHANNEL_USERNAME")
 	telegramTransferChannel := os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAME")
 
-	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannel == "" || telegramTransferChannel == ""{
-		log.Fatal("Telegram user client environment variables not fully set.")
+	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannel == "" ||
+		 telegramTransferChannel == "" || telegramPhoneNumber == "" || teregramCode == "" ||
+		  geminiAPIKey == ""{
+		log.Fatal("user client environment variables not fully set.")
 	}
 	telegramAppID, err := strconv.Atoi(telegramAppIDStr)
 	if err != nil {
@@ -75,7 +77,7 @@ func main() {
 	)
 
 	// Runメソッドを呼び出して接続を開始
-	if err := telegramClientManager.Run(ctx, phone, password); err != nil {
+	if err := telegramClientManager.Run(ctx, telegramPhoneNumber, teregramCode); err != nil {
 		log.Fatalf("Failed to run Telegram Gateway: %v", err)
 	}
 	log.Println("Telegram client connected and ready.")
