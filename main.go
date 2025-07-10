@@ -16,6 +16,9 @@ import (
 	if_http "github.com/itout-datetoya/hack-info-timeline/interfaces/http"
 	"github.com/itout-datetoya/hack-info-timeline/usecases"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -55,6 +58,14 @@ func main() {
 
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		dbHost, dbPort, dbUser, dbPass, dbName)
+
+	m, err := migrate.New("file://migrations", connStr)
+	if err != nil {
+		log.Fatalf("FATAL: failed to create migrate instance: %v", err)
+	}
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("FATAL: failed to run migrations: %v", err)
+	}
 
 	// データベース接続の初期化
 	db, err := sqlx.Connect("postgres", connStr)
