@@ -41,7 +41,7 @@ func (h *TransferHandler) GetLatestTimeline(c *gin.Context) {
 	c.JSON(http.StatusOK, infos)
 }
 
-func (h *TransferHandler) GetPrevimeline(c *gin.Context) {
+func (h *TransferHandler) GetPrevTimeline(c *gin.Context) {
 	tagsQuery := c.Query("tags")
 	prevInfoIDQuery := c.Query("prevInfoID") 
 	infoNumberQuery := c.Query("infoNumber") 

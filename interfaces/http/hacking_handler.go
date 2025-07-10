@@ -41,7 +41,7 @@ func (h *HackingHandler) GetLatestTimeline(c *gin.Context) {
 	c.JSON(http.StatusOK, infos)
 }
 
-func (h *HackingHandler) GetPrevimeline(c *gin.Context) {
+func (h *HackingHandler) GetPrevTimeline(c *gin.Context) {
 	tagsQuery := c.Query("tags")
 	prevInfoIDQuery := c.Query("prevInfoID") 
 	infoNumberQuery := c.Query("infoNumber") 
