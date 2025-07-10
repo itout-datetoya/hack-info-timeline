@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"strconv"
 	"github.com/itout-datetoya/hack-info-timeline/usecases"
 
 	"github.com/gin-gonic/gin"
@@ -18,13 +19,21 @@ func NewTransferHandler(transferUsecase *usecases.TransferUsecase) *TransferHand
 	 return &TransferHandler{transferUsecase: transferUsecase} 
 	}
 
-func (h *TransferHandler) GetTransferTimeline(c *gin.Context) {
+func (h *TransferHandler) GetLatestTimeline(c *gin.Context) {
 	tagsQuery := c.Query("tags")
+	infoNumberQuery := c.Query("infoNumber")
+
 	var tags []string
 	if tagsQuery != "" {
 		tags = strings.Split(tagsQuery, ",")
 	}
-	infos, err := h.transferUsecase.GetTimeline(c.Request.Context(), tags)
+	infoNumber, err := strconv.Atoi(infoNumberQuery)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid infoNumber format"})
+		return
+	}
+
+	infos, err := h.transferUsecase.GetLatestTimeline(c.Request.Context(), tags, infoNumber)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 		return
@@ -32,7 +41,37 @@ func (h *TransferHandler) GetTransferTimeline(c *gin.Context) {
 	c.JSON(http.StatusOK, infos)
 }
 
-func (h *TransferHandler) ListTransferTags(c *gin.Context) {
+func (h *TransferHandler) GetPrevimeline(c *gin.Context) {
+	tagsQuery := c.Query("tags")
+	prevInfoIDQuery := c.Query("prevInfoID") 
+	infoNumberQuery := c.Query("infoNumber") 
+
+	var tags []string
+	if tagsQuery != "" {
+		tags = strings.Split(tagsQuery, ",")
+	}
+
+	prevInfoID, err := strconv.ParseInt(prevInfoIDQuery, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid prevInfoID format"})
+		return
+	}
+
+	infoNumber, err := strconv.Atoi(infoNumberQuery)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid infoNumber format"})
+		return
+	}
+
+	infos, err := h.transferUsecase.GetPrevTimeline(c.Request.Context(), tags, prevInfoID, infoNumber)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+	c.JSON(http.StatusOK, infos)
+}
+
+func (h *TransferHandler) GetAllTags(c *gin.Context) {
 	tags, err := h.transferUsecase.GetAllTags(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})

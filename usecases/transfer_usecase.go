@@ -25,14 +25,19 @@ func NewTransferUsecase(repo repository.TransferRepository, telegramGateway gate
 	}
 }
 
-// タイムライン情報を取得
-func (uc *TransferUsecase) GetTimeline(ctx context.Context, tagNames []string) ([]*entity.TransferInfo, error) {
-	return uc.repo.FindByTagNames(ctx, tagNames)
+// 最新タイムライン情報を指定件数取得
+func (uc *TransferUsecase)GetLatestTimeline(ctx context.Context, tagNames []string, infoNumber int) ([]*entity.TransferInfo, error) {
+	return uc.repo.GetInfosByTagNames(ctx, tagNames, infoNumber)
+}
+
+// 指定情報より過去のタイムライン情報を指定件数取得
+func (uc *TransferUsecase)GetPrevTimeline(ctx context.Context, tagNames []string, prevInfoID int64, infoNumber int) ([]*entity.TransferInfo, error) {
+	return uc.repo.GetPrevInfosByTagNames(ctx, tagNames, prevInfoID, infoNumber)
 }
 
 // 全てのタグを取得
 func (uc *TransferUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error) {
-	return uc.repo.ListTags(ctx)
+	return uc.repo.GetAllTags(ctx)
 }
 
 // Telegramから投稿を取得し、DBに保存
@@ -93,7 +98,7 @@ func (uc *TransferUsecase) processSinglePost(ctx context.Context, post *gateway.
 	}
 
 	// DBに保存
-	_, err := uc.repo.Store(ctx, infoToStore, post.TagNames)
+	_, err := uc.repo.StoreInfo(ctx, infoToStore, post.TagNames)
 	if err != nil {
 		return fmt.Errorf("database store failed: %w", err)
 	}

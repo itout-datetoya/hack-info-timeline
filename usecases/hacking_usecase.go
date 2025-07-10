@@ -27,14 +27,19 @@ func NewHackingUsecase(repo repository.HackingRepository, telegramGateway gatewa
 	}
 }
 
-// タイムライン情報を取得
-func (uc *HackingUsecase) GetTimeline(ctx context.Context, tagNames []string) ([]*entity.HackingInfo, error) {
-	return uc.repo.FindByTagNames(ctx, tagNames)
+// 最新タイムライン情報を指定件数取得
+func (uc *HackingUsecase) GetLatestTimeline(ctx context.Context, tagNames []string, infoNumber int) ([]*entity.HackingInfo, error) {
+	return uc.repo.GetInfosByTagNames(ctx, tagNames, infoNumber)
+}
+
+// 指定情報より過去のタイムライン情報を指定件数取得
+func (uc *HackingUsecase) GetPrevTimeline(ctx context.Context, tagNames []string, prevInfoID int64, infoNumber int) ([]*entity.HackingInfo, error) {
+	return uc.repo.GetPrevInfosByTagNames(ctx, tagNames, prevInfoID, infoNumber)
 }
 
 // 全てのタグを取得
 func (uc *HackingUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error) {
-	return uc.repo.ListTags(ctx)
+	return uc.repo.GetAllTags(ctx)
 }
 
 // Telegramから投稿を取得し、DBに保存
@@ -102,11 +107,11 @@ func (uc *HackingUsecase) processSinglePost(ctx context.Context, post *gateway.H
 
 
 	// DBに保存
-	_, err = uc.repo.Store(ctx, infoToStore, extractedInfo.TagNames)
+	_, err = uc.repo.StoreInfo(ctx, infoToStore, extractedInfo.TagNames)
 	if err != nil {
 		return fmt.Errorf("database store failed: %w", err)
 	}
 
-	log.Printf("Successfully stored incident: %s", infoToStore.TxHash)
+	log.Printf("Successfully stored info: %s", infoToStore.TxHash)
 	return nil
 }

@@ -6,11 +6,14 @@ func NewRouter(hackingHandler HackingHandler, transferHandler TransferHandler) *
 	router := gin.Default()
 	api := router.Group("/v1")
 	{
-		api.GET("/hacking/infos", hackingHandler.GetHackingTimeline)
-		api.GET("/transfer/infos", transferHandler.GetTransferTimeline)
-		api.GET("/hacking/tags", hackingHandler.ListHackingTags)
-		api.GET("/transfer/tags", transferHandler.ListTransferTags)
+		api.GET("/hacking/latest-infos", hackingHandler.GetLatestTimeline)
+		api.GET("/hacking/prev-infos", hackingHandler.GetLatestTimeline)
+		api.GET("/hacking/tags", hackingHandler.GetAllTags)
 		api.POST("/hacking/scrape-new-infos", hackingHandler.ScrapeNewInfos)
+		
+		api.GET("/transfer/latest-infos", transferHandler.GetLatestTimeline)
+		api.GET("/transfer/prev-infos", transferHandler.GetLatestTimeline)
+		api.GET("/transfer/tags", transferHandler.GetAllTags)
 		api.POST("/transfer/scrape-new-infos", transferHandler.ScrapeNewInfos)
 	}
 	return router
