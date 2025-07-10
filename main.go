@@ -113,6 +113,57 @@ func main() {
 	hackingHandler := if_http.NewHackingHandler(hackingUsecase)
 	transferHandler := if_http.NewTransferHandler(transferUsecase)
 
+	// 5分毎のTickerを作成
+	ticker := time.NewTicker(5 * time.Minute)
+
+	// 定期実行処理
+	go func() {
+		// サーバー起動時に一度即時実行
+		log.Println("Initial scraping process started...")
+		initialScrapeCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+
+		if _, errs := hackingUsecase.ScrapeAndStore(initialScrapeCtx); len(errs) > 0 {
+			log.Printf("Initial hacking info scraping finished with errors: %v", errs)
+		} else {
+			log.Println("Initial hacking info finished successfully.")
+		}
+
+		if _, errs := transferUsecase.ScrapeAndStore(initialScrapeCtx); len(errs) > 0 {
+			log.Printf("Initial transfer info scraping finished with errors: %v", errs)
+		} else {
+			log.Println("Initial transfer info scraping finished successfully.")
+		}
+
+		cancel()
+
+		// Tickerとシャットダウンシグナルを待機
+		for {
+			select {
+			case <-ticker.C:
+				log.Println("Periodic scraping process started...")
+				
+				scrapeCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+				if _, errs := hackingUsecase.ScrapeAndStore(scrapeCtx); len(errs) > 0 {
+					log.Printf("Periodic hacking info scraping finished with errors: %v", errs)
+				} else {
+					log.Println("Periodic hacking info scraping finished successfully.")
+				}
+
+				if _, errs := transferUsecase.ScrapeAndStore(scrapeCtx); len(errs) > 0 {
+					log.Printf("Periodic transfer info scraping finished with errors: %v", errs)
+				} else {
+					log.Println("Periodic transfer info scraping finished successfully.")
+				}
+
+				cancel()
+
+			case <-ctx.Done():
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
 	// ルーターとHTTPサーバーのセットアップ
 	router := if_http.NewRouter(*hackingHandler, *transferHandler)
 	srv := &http.Server{
