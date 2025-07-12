@@ -13,6 +13,8 @@ FROM alpine:latest
 
 COPY --from=builder /app/main /app/main
 
+COPY --from=builder /app/migrations ./migrations/
+
 EXPOSE 10000
 
 CMD ["/app/main"]
