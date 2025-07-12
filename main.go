@@ -30,12 +30,8 @@ func main() {
 		log.Println("Warning: .env file not found")
 	}
 
-	// 設定の読み込み
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
+	// 設定の読み込
+	dbConnStr := os.Getenv("DATABASE_URL")
 
 	geminiAPIKey := os.Getenv("GEMINI_API_KEY")
 
@@ -48,18 +44,16 @@ func main() {
 
 	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannel == "" ||
 		 telegramTransferChannel == "" || telegramPhoneNumber == "" || teregramCode == "" ||
-		  geminiAPIKey == ""{
-		log.Fatal("user client environment variables not fully set.")
+		  geminiAPIKey == "" ||
+		  	dbConnStr == ""{
+		log.Fatal("user environment variables not fully set.")
 	}
 	telegramAppID, err := strconv.Atoi(telegramAppIDStr)
 	if err != nil {
 		log.Fatalf("Invalid TELEGRAM_APP_ID: %v", err)
 	}
 
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPass, dbName)
-
-	m, err := migrate.New("file://migrations", connStr)
+	m, err := migrate.New("file://migrations", dbConnStr)
 	if err != nil {
 		log.Fatalf("FATAL: failed to create migrate instance: %v", err)
 	}
@@ -68,7 +62,7 @@ func main() {
 	}
 
 	// データベース接続の初期化
-	db, err := sqlx.Connect("postgres", connStr)
+	db, err := sqlx.Connect("postgres", dbConnStr)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -167,7 +161,7 @@ func main() {
 	// ルーターとHTTPサーバーのセットアップ
 	router := if_http.NewRouter(*hackingHandler, *transferHandler)
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":10000",
 		Handler: router,
 	}
 
