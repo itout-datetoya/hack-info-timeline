@@ -37,12 +37,13 @@ func main() {
 	telegramAppIDStr := os.Getenv("TELEGRAM_APP_ID")
 	telegramAppHash := os.Getenv("TELEGRAM_APP_HASH")
 	telegramPhoneNumber := os.Getenv("TELEGRAM_PHONE_NUMBER")
+	telegramHash := os.Getenv("TELEGRAM_AUTH_HASH")
 	teregramCode := os.Getenv("TELEGRAM_CODE")
 	telegramHackingChannel := os.Getenv("TELEGRAM_HACKING_CHANNEL_USERNAME")
 	telegramTransferChannel := os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAME")
 
 	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannel == "" ||
-		 telegramTransferChannel == "" || telegramPhoneNumber == "" || teregramCode == "" ||
+		 telegramTransferChannel == "" || telegramPhoneNumber == "" || telegramHash == "" || teregramCode == "" ||
 		  geminiAPIKey == "" ||
 		  	dbConnStr == ""{
 		log.Fatal("user environment variables not fully set.")
@@ -81,7 +82,7 @@ func main() {
 	)
 
 	// Runメソッドを呼び出して接続を開始
-	if err := telegramClientManager.Run(ctx, telegramPhoneNumber, teregramCode); err != nil {
+	if err := telegramClientManager.Run(ctx, telegramPhoneNumber, telegramHash, teregramCode); err != nil {
 		log.Fatalf("Failed to run Telegram Gateway: %v", err)
 	}
 	log.Println("Telegram client connected and ready.")

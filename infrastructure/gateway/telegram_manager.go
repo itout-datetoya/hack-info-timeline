@@ -11,7 +11,7 @@ import (
 
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
-	"github.com/gotd/td/telegram/auth"
+	// "github.com/gotd/td/telegram/auth"
 	"github.com/gotd/td/tg"
 )
 
@@ -38,7 +38,7 @@ func NewTelegramClientManager(appID int, appHash string) *TelegramClientManager 
 
 // クライアントをバックグラウンドで実行し、接続と認証を処理
 // 接続が確立されるまでブロック
-func (m *TelegramClientManager) Run(ctx context.Context, phone string, password string) error {
+func (m *TelegramClientManager) Run(ctx context.Context, phone string, hash string, password string) error {
 	ctx, m.stop = context.WithCancel(ctx)
 
 	ready := make(chan struct{})
@@ -55,7 +55,7 @@ func (m *TelegramClientManager) Run(ctx context.Context, phone string, password 
 
 			// 未認証の場合、電話番号で認証フローを開始
 			if !status.Authorized {
-				if err := m.authFlow(ctx, phone, password); err != nil {
+				if err := m.authFlow(ctx, phone, hash, password); err != nil {
 					return fmt.Errorf("failed auth flow: %w \n please set sent auth code in telegram message", err)
 				}
 			}
@@ -95,20 +95,10 @@ func (m *TelegramClientManager) Run(ctx context.Context, phone string, password 
 }
 
 // 認証処理
-func (m *TelegramClientManager) authFlow(ctx context.Context, phone string, code string) error {
+func (m *TelegramClientManager) authFlow(ctx context.Context, phone string, hash string, code string) error {
 
-	sentCode, err := m.client.Auth().SendCode(ctx, phone, auth.SendCodeOptions{})
+	_, err := m.client.Auth().SignIn(ctx, phone, strings.TrimSpace(code), hash)
 	if err != nil {
-		return err
-	}
-	authSendCode, ok :=sentCode.(*tg.AuthSentCode)
-	if !ok {
-		return fmt.Errorf("failed to get auth code")
-	}
-	hash := authSendCode.PhoneCodeHash
-
-	_, signInErr := m.client.Auth().SignIn(ctx, phone, strings.TrimSpace(code), hash)
-	if signInErr != nil {
 		return err
 	}
 
