@@ -26,7 +26,7 @@ func NewTelegramHackingPostGateway(manager *TelegramClientManager, channelUserna
 	return &telegramHackingPostGateway{manager: manager, channelUsername: channelUsername}
 }
 
-// 最後に取得した投稿以降、最新100件の投稿を取得
+// 最後に取得した投稿以降、最新の投稿を取得
 func (g *telegramHackingPostGateway) GetPosts(ctx context.Context, limit int) ([]*gateway.HackingPost, error) {
 	api := g.manager.API()
 	if api == nil {
@@ -49,7 +49,7 @@ func (g *telegramHackingPostGateway) GetPosts(ctx context.Context, limit int) ([
 
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	// 最後に取得した投稿以降、最新100件の投稿を取得
+	// 最後に取得した投稿以降、最新の投稿を取得
 	history, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
 		Peer:  inputPeer,
 		MinID: g.lastMessageID, 
