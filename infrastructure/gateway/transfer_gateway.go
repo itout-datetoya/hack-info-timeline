@@ -116,7 +116,7 @@ func (g *telegramTransferPostGateway) parseTransferMessage(message string) (*gat
 			// "transferred" の後の単語が "from", "送金元", "to", "送金先"
 			if tokens[i+1] == "from" && tokens[i+3] == "to" {
 				post.From = strings.TrimPrefix(tokens[i+2], "#")
-				post.To = strings.TrimPrefix(tokens[i+4], "#")
+				post.To = strings.TrimSuffix(strings.TrimPrefix(tokens[i+4], "#"), ".")
 				found = true
 				break
 			}
