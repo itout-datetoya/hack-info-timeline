@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 	"errors"
+	"path/filepath"
 	"github.com/itout-datetoya/hack-info-timeline/infrastructure/datastore"
 	"github.com/itout-datetoya/hack-info-timeline/infrastructure/gateway"
 	if_http "github.com/itout-datetoya/hack-info-timeline/interfaces/http"
@@ -32,6 +33,8 @@ func main() {
 	// 設定の読み込
 	dbConnStr := os.Getenv("DATABASE_URL")
 
+	jsonString := os.Getenv("SESSION_JSON")
+
 	geminiAPIKey := os.Getenv("GEMINI_API_KEY")
 
 	telegramAppIDStr := os.Getenv("TELEGRAM_APP_ID")
@@ -45,7 +48,8 @@ func main() {
 	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannel == "" ||
 		 telegramTransferChannel == "" || telegramPhoneNumber == "" ||
 		  geminiAPIKey == "" ||
-		  	dbConnStr == ""{
+		  	dbConnStr == "" ||
+				jsonString == ""{
 		log.Fatal("user environment variables not fully set.")
 	}
 	telegramAppID, err := strconv.Atoi(telegramAppIDStr)
@@ -67,6 +71,24 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
+
+
+	dirPath := ".td"
+	filePath := filepath.Join(dirPath, "session.json")
+
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0755)
+	if err != nil {
+		if os.IsExist(err) {
+		} else {
+			log.Fatalf("failed to open file %v", err)
+		}
+	} else {
+		_, err = file.WriteString(jsonString)
+		if err != nil {
+			log.Fatalf("failed to write file %v", err)
+		}
+	}
+	file.Close()
 
 	// 依存性の注入 (DI)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
