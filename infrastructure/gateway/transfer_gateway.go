@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"regexp"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
@@ -103,12 +104,13 @@ func (g *telegramTransferPostGateway) parseTransferMessage(message string) (*gat
 
 	found := false
 	var post gateway.TransferPost
+	var amount string
 
 	// "transferred" を基準にパース
 	for i, token := range tokens {
 		if token == "transferred" && i > 1 && i+3 < len(tokens) {
 			// "transferred" の前の単語が「送金額」と「トークン」
-			post.Amount = strings.ReplaceAll(tokens[i-2], ",", "")
+			amount = strings.ReplaceAll(tokens[i-2], ",", "")
 			post.Token = strings.TrimPrefix(tokens[i-1], "#")
 
 			// "transferred" の後の単語が "from", "送金元", "to", "送金先"
@@ -120,6 +122,9 @@ func (g *telegramTransferPostGateway) parseTransferMessage(message string) (*gat
 			}
 		}
 	}
+
+	re := regexp.MustCompile(`^[^0-9]+`)
+	post.Amount = re.ReplaceAllString(amount, "")
 
 	if !found {
 		return nil, errors.New("TransferPost pattern not found in message")
