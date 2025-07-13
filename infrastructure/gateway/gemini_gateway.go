@@ -137,7 +137,7 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 	extractedInfo.TxHash = post.TxHash
 
 	// 表記ゆれ防止のため小文字化
-	if tokens[0] != "N/A" {
+	if !strings.Contains(string(tokensStr), "N/A") {
 		extractedInfo.TagNames = append(tokens, strings.ToLower(protocolNames[1]))
 	} else {
 		extractedInfo.TagNames = []string{strings.ToLower(protocolNames[1])}
