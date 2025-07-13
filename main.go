@@ -50,25 +50,31 @@ func main() {
 		  geminiAPIKey == "" ||
 		  	dbConnStr == "" ||
 				jsonString == ""{
-		log.Fatal("user environment variables not fully set.")
+		log.Fatal("User environment variables not fully set.")
+		return
 	}
 	telegramAppID, err := strconv.Atoi(telegramAppIDStr)
 	if err != nil {
 		log.Fatalf("Invalid TELEGRAM_APP_ID: %v", err)
+		return
 	}
 
 	m, err := migrate.New("file://migrations", dbConnStr)
 	if err != nil {
-		log.Fatalf("FATAL: failed to create migrate instance: %v", err)
+		log.Fatalf("Failed to create migrate instance: %v", err)
+		return
 	}
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("FATAL: failed to run migrations: %v", err)
+		log.Fatalf("Failed to run migrations: %v", err)
+		return
 	}
 
 	// データベース接続の初期化
 	db, err := sqlx.Connect("postgres", dbConnStr)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
+		db.Close()
+		return
 	}
 	defer db.Close()
 
@@ -76,16 +82,20 @@ func main() {
 	dirPath := ".td"
 	filePath := filepath.Join(dirPath, "session.json")
 
+	os.MkdirAll(dirPath, 0755)
+
 	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0755)
 	if err != nil {
 		if os.IsExist(err) {
 		} else {
-			log.Fatalf("failed to open file %v", err)
+			log.Fatalf("Failed to open file %v", err)
+			return
 		}
 	} else {
 		_, err = file.WriteString(jsonString)
 		if err != nil {
-			log.Fatalf("failed to write file %v", err)
+			log.Fatalf("Failed to write file %v", err)
+			return
 		}
 	}
 	file.Close()
@@ -106,6 +116,7 @@ func main() {
 	// Runメソッドを呼び出して接続を開始
 	if err := telegramClientManager.Run(ctx, telegramPhoneNumber, telegramHash, teregramCode); err != nil {
 		log.Fatalf("Failed to run Telegram Gateway: %v", err)
+		return
 	}
 	log.Println("Telegram client connected and ready.")
 
@@ -121,6 +132,7 @@ func main() {
 	geminiGateway, err := gateway.NewGeminiGateway(ctx, geminiAPIKey)
 	if err != nil {
 		log.Fatalf("Failed to initialize Gemini Gateway: %v", err)
+		return
 	}
 
 	// 各ハンドラーの初期化

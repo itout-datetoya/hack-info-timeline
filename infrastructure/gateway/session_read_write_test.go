@@ -9,22 +9,9 @@ import (
 )
 
 
-func TestReadWriteSessionFile(t *testing.T) () {
-	dirPath := ".td"
-	filePath := filepath.Join(dirPath, "session.json")
-	t.Log(filePath)
-
-
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		t.Error(err)
-	}
-
-	t.Log(string(data))
-	t.Log("complete read file")
-
+func TestWriteSessionFile(t *testing.T) () {
 	// .envファイルを読み込む
-	err = godotenv.Load()
+	err := godotenv.Load()
 	if err != nil {
 		t.Errorf("Error loading .env file: %v", err)
 	}
@@ -34,9 +21,8 @@ func TestReadWriteSessionFile(t *testing.T) () {
 		t.Errorf("'SESSION_JSON' is not set")
 	}
 
-
-	dirPath = ".td"
-	filePath = filepath.Join(dirPath, "session_copy.json")
+	dirPath := ".td"
+	filePath := filepath.Join(dirPath, "session.json")
 
 	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0755)
 	if err != nil {
