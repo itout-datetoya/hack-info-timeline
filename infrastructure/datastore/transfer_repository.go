@@ -49,7 +49,7 @@ func (r *transferRepository) GetInfosByTagNames(ctx context.Context, tagNames []
 	}
 
 	// ID順に整列、指定件数取得
-	query += " ORDER BY hi.id DESC LIMIT ?"
+	query += " ORDER BY ti.id DESC LIMIT ?"
 	args = append(args, infoNumber)
 
 	// データベースドライバに合わせてプレースホルダーを変換
@@ -148,19 +148,19 @@ func (r *transferRepository) GetPrevInfosByTagNames(ctx context.Context, tagName
 		}
 		// すでに取得している情報のIDより過去の情報を取得
 		if prevInfoID > 0 {
-			query += " AND hi.id < ?"
+			query += " AND ti.id < ?"
 			args = append(args, prevInfoID)
 		}
 	} else {
 		// すでに取得している情報のIDより過去の情報を取得
 		if prevInfoID > 0 {
-			query += " WHERE hi.id < ?"
+			query += " WHERE ti.id < ?"
 			args = append(args, prevInfoID)
 		}
 	}
 
 	// ID順に整列、指定件数取得
-	query += " ORDER BY hi.id DESC LIMIT ?"
+	query += " ORDER BY ti.id DESC LIMIT ?"
 	args = append(args, infoNumber)
 	// データベースドライバに合わせてプレースホルダーを変換
 	query = r.db.Rebind(query)
