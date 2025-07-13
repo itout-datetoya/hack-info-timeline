@@ -37,7 +37,7 @@ func TestTransferGatewayGetPosts(t *testing.T) {
 	telegramTransferChannel := os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAME")
 
 	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannel == "" ||
-		telegramTransferChannel == "" || phone == "" || hash == "" || code == ""{
+		telegramTransferChannel == "" || phone == "" {
 		log.Fatal("Telegram user client environment variables not fully set.")
 	}
 	telegramAppID, err := strconv.Atoi(telegramAppIDStr)

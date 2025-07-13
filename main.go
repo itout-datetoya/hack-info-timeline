@@ -43,7 +43,7 @@ func main() {
 	telegramTransferChannel := os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAME")
 
 	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannel == "" ||
-		 telegramTransferChannel == "" || telegramPhoneNumber == "" || telegramHash == "" || teregramCode == "" ||
+		 telegramTransferChannel == "" || telegramPhoneNumber == "" ||
 		  geminiAPIKey == "" ||
 		  	dbConnStr == ""{
 		log.Fatal("user environment variables not fully set.")

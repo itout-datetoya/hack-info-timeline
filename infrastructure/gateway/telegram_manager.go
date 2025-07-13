@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 	"sync"
 	"strings"
+	"log"
 
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
-	// "github.com/gotd/td/telegram/auth"
+	"github.com/gotd/td/telegram/auth"
 	"github.com/gotd/td/tg"
 )
 
@@ -94,12 +95,28 @@ func (m *TelegramClientManager) Run(ctx context.Context, phone string, hash stri
 	}
 }
 
-// 認証処理
+// 認証情報が設定されていれば、認証を実行
+// 認証情報が設定されていなければ、認証情報を取得してサーバーを停止
 func (m *TelegramClientManager) authFlow(ctx context.Context, phone string, hash string, code string) error {
+	if hash == "" || code == ""{
+		sentCode, err := m.client.Auth().SendCode(ctx, phone, auth.SendCodeOptions{})
+		if err != nil {
+			return err
+		}
+		log.Println("Send code")
+		authSendCode, ok :=sentCode.(*tg.AuthSentCode)
+		if !ok {
+			return fmt.Errorf("failed to get auth code")
+		}
+		hash := authSendCode.PhoneCodeHash
+		log.Printf("Hash: %s", hash)
+		return fmt.Errorf("check code in telegram\nAuth Hash: %s", hash)
 
-	_, err := m.client.Auth().SignIn(ctx, phone, strings.TrimSpace(code), hash)
-	if err != nil {
-		return err
+	} else {
+		_, err := m.client.Auth().SignIn(ctx, phone, strings.TrimSpace(code), hash)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
