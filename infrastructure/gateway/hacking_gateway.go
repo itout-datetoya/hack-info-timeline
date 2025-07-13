@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
@@ -102,6 +103,8 @@ func (g *telegramHackingPostGateway) convertMessages(ctx context.Context, histor
 							return nil, err
 						}
 						// 投稿内容を添付
+						date := repliedMessage.GetDate()
+						post.ReportTime = time.Unix(int64(date), 0)
 						post.Text = message.Message
 						posts = append(posts, post)
 					}

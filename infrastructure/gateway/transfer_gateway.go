@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"regexp"
+	"time"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
@@ -81,6 +82,8 @@ func (g *telegramTransferPostGateway) convertMessages(history tg.MessagesMessage
 			if err != nil {
 				return nil, err
 			}
+			date := message.GetDate()
+			post.ReportTime = time.Unix(int64(date), 0)
 
 			// 投稿からタグを取得
 			tagNames := g.extractTags(message.Message, message.Entities)

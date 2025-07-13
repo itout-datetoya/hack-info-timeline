@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 	"github.com/itout-datetoya/hack-info-timeline/domain/entity"
 	"github.com/itout-datetoya/hack-info-timeline/domain/repository"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
@@ -102,7 +101,7 @@ func (uc *HackingUsecase) processSinglePost(ctx context.Context, post *gateway.H
 	Network:	extractedInfo.Network,
 	Amount:		extractedInfo.Amount,
 	TxHash:		extractedInfo.TxHash,
-	ReportTime:	time.Now(),
+	ReportTime:	post.ReportTime,
 	}
 
 

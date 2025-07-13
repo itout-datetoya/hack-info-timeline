@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 	"github.com/itout-datetoya/hack-info-timeline/domain/entity"
 	"github.com/itout-datetoya/hack-info-timeline/domain/repository"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
@@ -94,7 +93,7 @@ func (uc *TransferUsecase) processSinglePost(ctx context.Context, post *gateway.
 	Amount:		post.Amount,
 	From:		post.From,
 	To:			post.To,
-	ReportTime:	time.Now(),
+	ReportTime:	post.ReportTime,
 	}
 
 	// DBに保存

@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"time"
 )
 
 // 送金情報の投稿
@@ -10,6 +11,7 @@ type TransferPost struct {
 	Amount		string
 	From		string
 	To			string
+	ReportTime	time.Time
 	TagNames	[]string
 }
 

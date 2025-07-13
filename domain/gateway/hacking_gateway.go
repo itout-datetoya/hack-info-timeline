@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"time"
 )
 
 // ハッキング情報の投稿
@@ -10,6 +11,7 @@ type HackingPost struct {
 	Network		string
 	Amount		string
 	TxHash		string
+	ReportTime	time.Time
 }
 
 // 抽出されたハッキング情報
