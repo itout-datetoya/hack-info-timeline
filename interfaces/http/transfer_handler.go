@@ -84,7 +84,14 @@ func (h *TransferHandler) GetAllTags(c *gin.Context) {
 }
 
 func (h *TransferHandler) ScrapeNewInfos(c *gin.Context) {
-	processedCount, errs := h.transferUsecase.ScrapeAndStore(c.Request.Context())
+	limitQuery := c.Query("limit")
+	limit, err := strconv.Atoi(limitQuery)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid infoNumber format"})
+		return
+	}
+
+	processedCount, errs := h.transferUsecase.ScrapeAndStore(c.Request.Context(), limit)
 
 	if len(errs) > 0 {
 		// エラーはサーバー側でログに記録

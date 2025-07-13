@@ -40,9 +40,9 @@ func (uc *TransferUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error
 }
 
 // Telegramから投稿を取得し、DBに保存
-func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context) (int, []error) {
+func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, []error) {
 	// 全ての新しい投稿を取得
-	posts, err := uc.telegramGateway.GetPosts(ctx)
+	posts, err := uc.telegramGateway.GetPosts(ctx, limit)
 	if err != nil {
 		return 0, []error{fmt.Errorf("failed to get posts from telegram: %w", err)}
 	}

@@ -17,5 +17,5 @@ type TransferPost struct {
 
 // Telegram APIとの送金情報の通信を抽象化
 type TelegramTransferPostGateway interface {
-	GetPosts(ctx context.Context) ([]*TransferPost, error)
+	GetPosts(ctx context.Context, limit int) ([]*TransferPost, error)
 }

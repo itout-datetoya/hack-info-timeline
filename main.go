@@ -150,13 +150,13 @@ func main() {
 		log.Println("Initial scraping process started...")
 		initialScrapeCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 
-		if _, errs := hackingUsecase.ScrapeAndStore(initialScrapeCtx); len(errs) > 0 {
+		if _, errs := hackingUsecase.ScrapeAndStore(initialScrapeCtx, 200); len(errs) > 0 {
 			log.Printf("Initial hacking info scraping finished with errors: %v", errs)
 		} else {
 			log.Println("Initial hacking info finished successfully.")
 		}
 
-		if _, errs := transferUsecase.ScrapeAndStore(initialScrapeCtx); len(errs) > 0 {
+		if _, errs := transferUsecase.ScrapeAndStore(initialScrapeCtx, 200); len(errs) > 0 {
 			log.Printf("Initial transfer info scraping finished with errors: %v", errs)
 		} else {
 			log.Println("Initial transfer info scraping finished successfully.")
@@ -171,13 +171,13 @@ func main() {
 				log.Println("Periodic scraping process started...")
 				
 				scrapeCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-				if _, errs := hackingUsecase.ScrapeAndStore(scrapeCtx); len(errs) > 0 {
+				if _, errs := hackingUsecase.ScrapeAndStore(scrapeCtx, 100); len(errs) > 0 {
 					log.Printf("Periodic hacking info scraping finished with errors: %v", errs)
 				} else {
 					log.Println("Periodic hacking info scraping finished successfully.")
 				}
 
-				if _, errs := transferUsecase.ScrapeAndStore(scrapeCtx); len(errs) > 0 {
+				if _, errs := transferUsecase.ScrapeAndStore(scrapeCtx, 100); len(errs) > 0 {
 					log.Printf("Periodic transfer info scraping finished with errors: %v", errs)
 				} else {
 					log.Println("Periodic transfer info scraping finished successfully.")

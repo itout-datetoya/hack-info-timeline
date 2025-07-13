@@ -28,7 +28,7 @@ func NewTelegramTransferPostGateway(manager *TelegramClientManager, channelUsern
 }
 
 // 最後に取得した投稿以降、最新100件の投稿を取得
-func (g *telegramTransferPostGateway) GetPosts(ctx context.Context) ([]*gateway.TransferPost, error) {
+func (g *telegramTransferPostGateway) GetPosts(ctx context.Context, limit int) ([]*gateway.TransferPost, error) {
 	api := g.manager.API()
 	if api == nil {
 		return nil, errors.New("telegram client is not ready")
@@ -54,7 +54,7 @@ func (g *telegramTransferPostGateway) GetPosts(ctx context.Context) ([]*gateway.
 	history, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
 		Peer:  inputPeer,
 		MinID: g.lastMessageID, 
-		Limit: 100,
+		Limit: limit,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get channel history: %w", err)

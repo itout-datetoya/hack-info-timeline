@@ -73,7 +73,7 @@ func TestHackingGatewayGetPosts(t *testing.T) {
 		telegramHackingChannel,
 	)
 
-	hackingPosts, err := telegramHackingGateway.GetPosts(ctx)
+	hackingPosts, err := telegramHackingGateway.GetPosts(ctx, 100)
 	if err != nil {
 		t.Error(err)
 	}

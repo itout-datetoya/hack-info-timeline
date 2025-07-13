@@ -77,7 +77,7 @@ func TestTransferGatewayGetPosts(t *testing.T) {
 		telegramTransferChannel,
 	)
 
-	transferPosts, err := telegramTransferGateway.GetPosts(ctx)
+	transferPosts, err := telegramTransferGateway.GetPosts(ctx, 100)
 	if err != nil {
 		t.Error(err)
 	}
