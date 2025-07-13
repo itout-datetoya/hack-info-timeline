@@ -36,6 +36,7 @@ func (h *TransferHandler) GetLatestTimeline(c *gin.Context) {
 	infos, err := h.transferUsecase.GetLatestTimeline(c.Request.Context(), tags, infoNumber)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		log.Printf("Failed to get latest hacking timeline: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, infos)
@@ -66,6 +67,7 @@ func (h *TransferHandler) GetPrevTimeline(c *gin.Context) {
 	infos, err := h.transferUsecase.GetPrevTimeline(c.Request.Context(), tags, prevInfoID, infoNumber)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		log.Printf("Failed to get previous hacking timeline: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, infos)
@@ -75,6 +77,7 @@ func (h *TransferHandler) GetAllTags(c *gin.Context) {
 	tags, err := h.transferUsecase.GetAllTags(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		log.Printf("Failed to get tags: %v", err)
 		return
 	}
 	c.JSON(http.StatusOK, tags)

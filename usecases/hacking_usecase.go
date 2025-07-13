@@ -113,5 +113,6 @@ func (uc *HackingUsecase) processSinglePost(ctx context.Context, post *gateway.H
 	}
 
 	log.Printf("Successfully stored info: %s", infoToStore.TxHash)
+	log.Printf("Tags: %s", extractedInfo.TagNames)
 	return nil
 }

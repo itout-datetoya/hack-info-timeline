@@ -104,5 +104,6 @@ func (uc *TransferUsecase) processSinglePost(ctx context.Context, post *gateway.
 	}
 
 	log.Printf("Successfully stored %s %s Transfer", post.Amount, post.Token)
+	log.Printf("Tags: %s", post.TagNames)
 	return nil
 }
