@@ -12,15 +12,16 @@ import (
 
 // 送金情報に関するユースケース
 type TransferUsecase struct {
-	repo repository.TransferRepository
-	telegramGateway gateway.TelegramTransferPostGateway
+	repo 				repository.TransferRepository
+	telegramGateways	[]gateway.TelegramTransferPostGateway
+	mu            		sync.Mutex
 }
 
 // 新しいTransferUsecaseを生成
-func NewTransferUsecase(repo repository.TransferRepository, telegramGateway gateway.TelegramTransferPostGateway) *TransferUsecase {
+func NewTransferUsecase(repo repository.TransferRepository, telegramGateways []gateway.TelegramTransferPostGateway) *TransferUsecase {
 	return &TransferUsecase{
 		repo: repo,
-		telegramGateway: telegramGateway,
+		telegramGateways: telegramGateways,
 	}
 }
 
@@ -42,9 +43,35 @@ func (uc *TransferUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error
 // Telegramから投稿を取得し、DBに保存
 func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, []error) {
 	// 全ての新しい投稿を取得
-	posts, err := uc.telegramGateway.GetPosts(ctx, limit)
-	if err != nil {
-		return 0, []error{fmt.Errorf("failed to get posts from telegram: %w", err)}
+	var wg sync.WaitGroup
+	errsChan := make(chan error, len(uc.telegramGateways))
+	var posts []*gateway.TransferPost
+
+	for _, gw := range uc.telegramGateways {
+		wg.Add(1)
+		go func(gw gateway.TelegramTransferPostGateway) {
+			defer wg.Done()
+			newPosts, err := gw.GetPosts(ctx, limit)
+			if err != nil {
+				errsChan <- fmt.Errorf("failed to get posts from telegram: %w", err)
+				return 
+			}
+			uc.mu.Lock()
+			posts = append(posts, newPosts...)
+			uc.mu.Unlock()
+		}(gw)
+	}
+	
+	wg.Wait()
+	close(errsChan)
+
+	var getPostsErrors []error
+	for err := range errsChan {
+		getPostsErrors = append(getPostsErrors, err)
+	}
+
+	if len(getPostsErrors) != 0 {
+		return 0, getPostsErrors
 	}
 
 	if len(posts) == 0 {
@@ -53,8 +80,7 @@ func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, 
 	}
 
 	// 各投稿を並行処理
-	var wg sync.WaitGroup
-	errsChan := make(chan error, len(posts))
+	errsChan = make(chan error, len(posts))
 
 	for _, post := range posts {
 		wg.Add(1)

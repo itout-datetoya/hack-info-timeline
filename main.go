@@ -10,7 +10,9 @@ import (
 	"syscall"
 	"time"
 	"errors"
+	"strings"
 	"path/filepath"
+	dm_gateway "github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 	"github.com/itout-datetoya/hack-info-timeline/infrastructure/datastore"
 	"github.com/itout-datetoya/hack-info-timeline/infrastructure/gateway"
 	if_http "github.com/itout-datetoya/hack-info-timeline/interfaces/http"
@@ -42,11 +44,11 @@ func main() {
 	telegramPhoneNumber := os.Getenv("TELEGRAM_PHONE_NUMBER")
 	telegramHash := os.Getenv("TELEGRAM_AUTH_HASH")
 	teregramCode := os.Getenv("TELEGRAM_CODE")
-	telegramHackingChannel := os.Getenv("TELEGRAM_HACKING_CHANNEL_USERNAME")
-	telegramTransferChannel := os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAME")
+	telegramHackingChannels := strings.Split(os.Getenv("TELEGRAM_HACKING_CHANNEL_USERNAMES"), ",")
+	telegramTransferChannels := strings.Split(os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAME"), ",")
 
-	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannel == "" ||
-		 telegramTransferChannel == "" || telegramPhoneNumber == "" ||
+	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannels[0] == "" ||
+		 telegramTransferChannels[0] == "" || telegramPhoneNumber == "" ||
 		  geminiAPIKey == "" ||
 		  	dbConnStr == "" ||
 				jsonString == ""{
@@ -121,14 +123,24 @@ func main() {
 	log.Println("Telegram client connected and ready.")
 
 	// 各gatewayの初期化
-	telegramHackingGateway := gateway.NewTelegramHackingPostGateway(
-		telegramClientManager,
-		telegramHackingChannel,
-	)
-	telegramTransferGateway := gateway.NewTelegramTransferPostGateway(
-		telegramClientManager,
-		telegramTransferChannel,
-	)
+	var telegramHackingGateways []dm_gateway.TelegramHackingPostGateway
+	for _, channel := range telegramHackingChannels {
+		telegramHackingGateways = append(telegramHackingGateways, 
+			gateway.NewTelegramHackingPostGateway(
+				telegramClientManager,
+				channel,
+		))
+	}
+
+	var telegramTransferGateways []dm_gateway.TelegramTransferPostGateway
+	for _, channel := range telegramTransferChannels {
+		telegramTransferGateways = append(telegramTransferGateways, 
+			gateway.NewTelegramTransferPostGateway(
+				telegramClientManager,
+				channel,
+		))
+	}
+	
 	geminiGateway, err := gateway.NewGeminiGateway(ctx, geminiAPIKey)
 	if err != nil {
 		log.Fatalf("Failed to initialize Gemini Gateway: %v", err)
@@ -136,8 +148,8 @@ func main() {
 	}
 
 	// 各ハンドラーの初期化
-	hackingUsecase := usecases.NewHackingUsecase(hackingRepo, telegramHackingGateway, geminiGateway)
-	transferUsecase := usecases.NewTransferUsecase(transferRepo, telegramTransferGateway)
+	hackingUsecase := usecases.NewHackingUsecase(hackingRepo, telegramHackingGateways, geminiGateway)
+	transferUsecase := usecases.NewTransferUsecase(transferRepo, telegramTransferGateways)
 	hackingHandler := if_http.NewHackingHandler(hackingUsecase)
 	transferHandler := if_http.NewTransferHandler(transferUsecase)
 
