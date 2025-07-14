@@ -45,7 +45,7 @@ func main() {
 	telegramHash := os.Getenv("TELEGRAM_AUTH_HASH")
 	teregramCode := os.Getenv("TELEGRAM_CODE")
 	telegramHackingChannels := strings.Split(os.Getenv("TELEGRAM_HACKING_CHANNEL_USERNAMES"), ",")
-	telegramTransferChannels := strings.Split(os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAME"), ",")
+	telegramTransferChannels := strings.Split(os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAMES"), ",")
 
 	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannels[0] == "" ||
 		 telegramTransferChannels[0] == "" || telegramPhoneNumber == "" ||
