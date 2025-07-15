@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"log"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
@@ -99,14 +100,15 @@ func (g *telegramHackingPostGateway) convertMessages(ctx context.Context, histor
 					if _, ok := repliedMessage.GetReplyTo(); !ok {
 						// リプライ先からハッキング情報を取得
 						post, err := g.parseHackingMessage(repliedMessage.Message)
-						if err != nil {
-							return nil, err
+						if err == nil {
+							// 投稿内容を添付
+							date := repliedMessage.GetDate()
+							post.ReportTime = time.Unix(int64(date), 0)
+							post.Text = message.Message
+							posts = append(posts, post)
+						} else {
+							log.Printf("Failed to parse hacking message with error: %v", err)
 						}
-						// 投稿内容を添付
-						date := repliedMessage.GetDate()
-						post.ReportTime = time.Unix(int64(date), 0)
-						post.Text = message.Message
-						posts = append(posts, post)
 					}
 				}
 			}

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"regexp"
 	"time"
+	"log"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
@@ -79,17 +80,19 @@ func (g *telegramTransferPostGateway) convertMessages(history tg.MessagesMessage
 			
 			// 投稿から送金情報を取得
 			post, err := g.parseTransferMessage(message.Message)
-			if err != nil {
-				return nil, err
+			if err == nil {
+				// 投稿から時間を取得
+				date := message.GetDate()
+				post.ReportTime = time.Unix(int64(date), 0)
+
+				// 投稿からタグを取得
+				tagNames := g.extractTags(message.Message, message.Entities)
+				post.TagNames = tagNames
+
+				posts = append(posts, post)
+			} else {
+				log.Printf("Failed to parse transfer message with error: %v", err)
 			}
-			date := message.GetDate()
-			post.ReportTime = time.Unix(int64(date), 0)
-
-			// 投稿からタグを取得
-			tagNames := g.extractTags(message.Message, message.Entities)
-			post.TagNames = tagNames
-
-			posts = append(posts, post)
 
 			// 最後に取得した投稿のIDを更新
 			if message.ID > g.lastMessageID {
