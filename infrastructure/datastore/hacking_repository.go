@@ -147,13 +147,13 @@ func (r *hackingRepository) GetPrevInfosByTagNames(ctx context.Context, tagNames
 		if err != nil {
 			return nil, fmt.Errorf("failed to expand IN clause: %w", err)
 		}
-		// すでに取得して言える情報のIDより過去の情報を取得
+		// すでに取得している情報のIDより過去の情報を取得
 		if prevInfoID > 0 {
 			query += " AND hi.id < ?"
 			args = append(args, prevInfoID)
 		}
 	} else {
-		// すでに取得して言える情報のIDより過去の情報を取得
+		// すでに取得している情報のIDより過去の情報を取得
 		if prevInfoID > 0 {
 			query += " WHERE hi.id < ?"
 			args = append(args, prevInfoID)
