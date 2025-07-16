@@ -1,4 +1,4 @@
-# DeFi Intel API Server
+# DeFi Information API Server
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/itout-datetoya/hack-info-timeline
 )](https://goreportcard.com/report/github.com/itout-datetoya/hack-info-timeline)
