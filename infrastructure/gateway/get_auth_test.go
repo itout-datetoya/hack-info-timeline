@@ -4,24 +4,23 @@ import (
 	"testing"
 
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"os"
-	"fmt"
-	"path/filepath"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
-	"errors"
 
-	"github.com/joho/godotenv"
-	"go.uber.org/zap"
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/telegram/auth"
 	"github.com/gotd/td/tg"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
-
 
 func TestGetAuth(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
@@ -51,8 +50,6 @@ func TestGetAuth(t *testing.T) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-
-
 	sessionDir := ".td"
 	os.MkdirAll(sessionDir, 0755)
 	client := telegram.NewClient(telegramAppID, telegramAppHash, telegram.Options{
@@ -66,13 +63,13 @@ func TestGetAuth(t *testing.T) {
 	log.Println("Client setting")
 
 	// 認証情報を取得
-	if err := telegramClientManager.getAuth(ctx, phone);  err != nil {
+	if err := telegramClientManager.getAuth(ctx, phone); err != nil {
 		log.Fatalf("Failed to get auth code: %v", err)
 	}
 
 	log.Println("Get Auth")
 
-	stop()       // 他のコンテキストユーザーにキャンセルを通知
+	stop() // 他のコンテキストユーザーにキャンセルを通知
 	log.Println("Shutting down server...")
 
 	// Telegramクライアントを停止
@@ -84,14 +81,14 @@ func TestGetAuth(t *testing.T) {
 
 }
 
-func (m *TelegramClientManager) getAuthHash(ctx context.Context, phone string) (error) {
+func (m *TelegramClientManager) getAuthHash(ctx context.Context, phone string) error {
 
 	sentCode, err := m.client.Auth().SendCode(ctx, phone, auth.SendCodeOptions{})
 	if err != nil {
 		return err
 	}
 	log.Println("Send code")
-	authSendCode, ok :=sentCode.(*tg.AuthSentCode)
+	authSendCode, ok := sentCode.(*tg.AuthSentCode)
 	if !ok {
 		return fmt.Errorf("failed to get auth code")
 	}
@@ -101,7 +98,7 @@ func (m *TelegramClientManager) getAuthHash(ctx context.Context, phone string) (
 	return nil
 }
 
-func (m *TelegramClientManager) getAuth(ctx context.Context, phone string) (error) {
+func (m *TelegramClientManager) getAuth(ctx context.Context, phone string) error {
 	ctx, m.stop = context.WithCancel(ctx)
 
 	ready := make(chan struct{})

@@ -4,24 +4,23 @@ import (
 	"testing"
 
 	"context"
+	"errors"
+	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 	"log"
 	"os"
-	"path/filepath"
 	"os/signal"
-	"strconv"
-	"syscall"
-	"errors"
-	"strings"
+	"path/filepath"
 	"regexp"
-	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
+	"strconv"
+	"strings"
+	"syscall"
 
-	"github.com/joho/godotenv"
-	"go.uber.org/zap"
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
-
 
 func TestTransferGatewayGetPosts(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
@@ -53,8 +52,6 @@ func TestTransferGatewayGetPosts(t *testing.T) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-
-
 	sessionDir := ".td"
 	os.MkdirAll(sessionDir, 0755)
 	client := telegram.NewClient(telegramAppID, telegramAppHash, telegram.Options{
@@ -82,7 +79,7 @@ func TestTransferGatewayGetPosts(t *testing.T) {
 		t.Error(err)
 	}
 
-	stop()       // 他のコンテキストユーザーにキャンセルを通知
+	stop() // 他のコンテキストユーザーにキャンセルを通知
 	log.Println("Shutting down server...")
 
 	// Telegramクライアントを停止

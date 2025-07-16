@@ -2,11 +2,11 @@ package http
 
 import (
 	"fmt"
+	"github.com/itout-datetoya/hack-info-timeline/usecases"
 	"log"
 	"net/http"
-	"strings"
 	"strconv"
-	"github.com/itout-datetoya/hack-info-timeline/usecases"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,8 +16,8 @@ type TransferHandler struct {
 }
 
 func NewTransferHandler(transferUsecase *usecases.TransferUsecase) *TransferHandler {
-	 return &TransferHandler{transferUsecase: transferUsecase} 
-	}
+	return &TransferHandler{transferUsecase: transferUsecase}
+}
 
 func (h *TransferHandler) GetLatestTimeline(c *gin.Context) {
 	tagsQuery := c.Query("tags")
@@ -44,8 +44,8 @@ func (h *TransferHandler) GetLatestTimeline(c *gin.Context) {
 
 func (h *TransferHandler) GetPrevTimeline(c *gin.Context) {
 	tagsQuery := c.Query("tags")
-	prevInfoIDQuery := c.Query("prevInfoID") 
-	infoNumberQuery := c.Query("infoNumber") 
+	prevInfoIDQuery := c.Query("prevInfoID")
+	infoNumberQuery := c.Query("infoNumber")
 
 	var tags []string
 	if tagsQuery != "" {

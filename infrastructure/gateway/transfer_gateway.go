@@ -4,23 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
+	"log"
+	"regexp"
 	"strings"
 	"sync"
-	"regexp"
 	"time"
-	"log"
-	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
 )
 
 // TransferHackingPostGatewayを実装する構造体
 type telegramTransferPostGateway struct {
-	manager			*TelegramClientManager
-	channelUsername	string
+	manager         *TelegramClientManager
+	channelUsername string
 	channelPeer     *tg.InputPeerChannel
-	lastMessageID	int
-	mu            	sync.Mutex
+	lastMessageID   int
+	mu              sync.Mutex
 }
 
 // 新しいtelegramTransferPostGatewayを生成
@@ -54,7 +54,7 @@ func (g *telegramTransferPostGateway) GetPosts(ctx context.Context, limit int) (
 	// 最後に取得した投稿以降、最新の投稿を取得
 	history, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
 		Peer:  inputPeer,
-		MinID: g.lastMessageID, 
+		MinID: g.lastMessageID,
 		Limit: limit,
 	})
 	if err != nil {
@@ -77,7 +77,7 @@ func (g *telegramTransferPostGateway) convertMessages(history tg.MessagesMessage
 	for _, msg := range channelMessages.Messages {
 		// チャンネルの投稿か確認
 		if message, ok := msg.(*tg.Message); ok && message.Message != "" {
-			
+
 			// 投稿から送金情報を取得
 			post, err := g.parseTransferMessage(message.Message)
 			if err == nil {
@@ -140,7 +140,7 @@ func (g *telegramTransferPostGateway) parseTransferMessage(message string) (*gat
 }
 
 // 投稿に付けられたタグを取得
-func (g *telegramTransferPostGateway) extractTags (message string, entities []tg.MessageEntityClass) []string {
+func (g *telegramTransferPostGateway) extractTags(message string, entities []tg.MessageEntityClass) []string {
 	var tags []string
 	if len(entities) == 0 {
 		return tags

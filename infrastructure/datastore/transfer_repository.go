@@ -21,7 +21,7 @@ func NewTransferRepository(db *sqlx.DB) *transferRepository {
 // 指定したタグ名に一致する送金情報を指定の件数取得
 func (r *transferRepository) GetInfosByTagNames(ctx context.Context, tagNames []string, infoNumber int) ([]*entity.TransferInfo, error) {
 	// 条件に合う送金情報を取得
-	
+
 	// 送金情報テーブルから重複を排除して選択
 	query := `
 		SELECT DISTINCT
@@ -121,7 +121,7 @@ func (r *transferRepository) GetInfosByTagNames(ctx context.Context, tagNames []
 // 指定したタグ名に一致する送金情報の内、指定した情報より過去から指定の件数取得
 func (r *transferRepository) GetPrevInfosByTagNames(ctx context.Context, tagNames []string, prevInfoID int64, infoNumber int) ([]*entity.TransferInfo, error) {
 	// 条件に合う送金情報を取得
-	
+
 	// 送金情報テーブルから重複を排除して選択
 	query := `
 		SELECT DISTINCT

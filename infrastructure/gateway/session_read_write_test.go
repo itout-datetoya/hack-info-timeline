@@ -2,14 +2,13 @@ package gateway
 
 import (
 	"os"
-	"testing"
 	"path/filepath"
+	"testing"
 
 	"github.com/joho/godotenv"
 )
 
-
-func TestWriteSessionFile(t *testing.T) () {
+func TestWriteSessionFile(t *testing.T) {
 	// .envファイルを読み込む
 	err := godotenv.Load()
 	if err != nil {

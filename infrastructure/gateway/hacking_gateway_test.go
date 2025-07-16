@@ -4,24 +4,23 @@ import (
 	"testing"
 
 	"context"
-	"log"
-	"os"
-	"path/filepath"
-	"os/signal"
-	"strconv"
-	"syscall"
-	"strings"
-	"sync"
 	"fmt"
 	dm_gateway "github.com/itout-datetoya/hack-info-timeline/domain/gateway"
+	"log"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
 
-	"github.com/joho/godotenv"
-	"go.uber.org/zap"
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
-
 
 func TestHackingGatewayGetPosts(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
@@ -41,7 +40,7 @@ func TestHackingGatewayGetPosts(t *testing.T) {
 	telegramTransferChannels := strings.Split(os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAMES"), ",")
 
 	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannels[0] == "" ||
-		telegramTransferChannels[0] == "" || phone == ""{
+		telegramTransferChannels[0] == "" || phone == "" {
 		log.Fatal("Telegram user client environment variables not fully set.")
 	}
 	telegramAppID, err := strconv.Atoi(telegramAppIDStr)
@@ -52,8 +51,6 @@ func TestHackingGatewayGetPosts(t *testing.T) {
 	// 依存性の注入 (DI)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-
 
 	sessionDir := ".td"
 	os.MkdirAll(sessionDir, 0755)
@@ -74,11 +71,11 @@ func TestHackingGatewayGetPosts(t *testing.T) {
 	// 各gatewayの初期化
 	var telegramHackingGateways []dm_gateway.TelegramHackingPostGateway
 	for _, channel := range telegramHackingChannels {
-		telegramHackingGateways = append(telegramHackingGateways, 
+		telegramHackingGateways = append(telegramHackingGateways,
 			NewTelegramHackingPostGateway(
 				telegramClientManager,
 				channel,
-		))
+			))
 	}
 
 	limit := 100
@@ -95,14 +92,14 @@ func TestHackingGatewayGetPosts(t *testing.T) {
 			newPosts, err := gw.GetPosts(ctx, limit)
 			if err != nil {
 				errsChan <- fmt.Errorf("failed to get posts from telegram: %w", err)
-				return 
+				return
 			}
 			mu.Lock()
 			posts = append(posts, newPosts...)
 			mu.Unlock()
 		}(gw)
 	}
-	
+
 	wg.Wait()
 	close(errsChan)
 
@@ -115,7 +112,7 @@ func TestHackingGatewayGetPosts(t *testing.T) {
 		log.Fatalf("failed to get posts from telegram: %v", getPostsErrors)
 	}
 
-	stop()       // 他のコンテキストユーザーにキャンセルを通知
+	stop() // 他のコンテキストユーザーにキャンセルを通知
 	log.Println("Shutting down server...")
 
 	// Telegramクライアントを停止

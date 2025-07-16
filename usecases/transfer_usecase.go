@@ -3,35 +3,35 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"github.com/itout-datetoya/hack-info-timeline/domain/entity"
+	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
+	"github.com/itout-datetoya/hack-info-timeline/domain/repository"
 	"log"
 	"sync"
-	"github.com/itout-datetoya/hack-info-timeline/domain/entity"
-	"github.com/itout-datetoya/hack-info-timeline/domain/repository"
-	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 )
 
 // 送金情報に関するユースケース
 type TransferUsecase struct {
-	repo 				repository.TransferRepository
-	telegramGateways	[]gateway.TelegramTransferPostGateway
-	mu            		sync.Mutex
+	repo             repository.TransferRepository
+	telegramGateways []gateway.TelegramTransferPostGateway
+	mu               sync.Mutex
 }
 
 // 新しいTransferUsecaseを生成
 func NewTransferUsecase(repo repository.TransferRepository, telegramGateways []gateway.TelegramTransferPostGateway) *TransferUsecase {
 	return &TransferUsecase{
-		repo: repo,
+		repo:             repo,
 		telegramGateways: telegramGateways,
 	}
 }
 
 // 最新タイムライン情報を指定件数取得
-func (uc *TransferUsecase)GetLatestTimeline(ctx context.Context, tagNames []string, infoNumber int) ([]*entity.TransferInfo, error) {
+func (uc *TransferUsecase) GetLatestTimeline(ctx context.Context, tagNames []string, infoNumber int) ([]*entity.TransferInfo, error) {
 	return uc.repo.GetInfosByTagNames(ctx, tagNames, infoNumber)
 }
 
 // 指定情報より過去のタイムライン情報を指定件数取得
-func (uc *TransferUsecase)GetPrevTimeline(ctx context.Context, tagNames []string, prevInfoID int64, infoNumber int) ([]*entity.TransferInfo, error) {
+func (uc *TransferUsecase) GetPrevTimeline(ctx context.Context, tagNames []string, prevInfoID int64, infoNumber int) ([]*entity.TransferInfo, error) {
 	return uc.repo.GetPrevInfosByTagNames(ctx, tagNames, prevInfoID, infoNumber)
 }
 
@@ -54,14 +54,14 @@ func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, 
 			newPosts, err := gw.GetPosts(ctx, limit)
 			if err != nil {
 				errsChan <- fmt.Errorf("failed to get posts from telegram: %w", err)
-				return 
+				return
 			}
 			uc.mu.Lock()
 			posts = append(posts, newPosts...)
 			uc.mu.Unlock()
 		}(gw)
 	}
-	
+
 	wg.Wait()
 	close(errsChan)
 
@@ -95,7 +95,7 @@ func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, 
 			}
 		}(post)
 	}
-	
+
 	wg.Wait()
 	close(errsChan)
 
@@ -115,11 +115,11 @@ func (uc *TransferUsecase) processSinglePost(ctx context.Context, post *gateway.
 	log.Printf("Processing post: %s %s Transfer", post.Amount, post.Token)
 
 	infoToStore := &entity.TransferInfo{
-	Token:		post.Token,
-	Amount:		post.Amount,
-	From:		post.From,
-	To:			post.To,
-	ReportTime:	post.ReportTime,
+		Token:      post.Token,
+		Amount:     post.Amount,
+		From:       post.From,
+		To:         post.To,
+		ReportTime: post.ReportTime,
 	}
 
 	// DBに保存

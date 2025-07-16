@@ -3,8 +3,8 @@ package gateway
 import (
 	"context"
 	"fmt"
-	"strings"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
+	"strings"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
@@ -12,7 +12,7 @@ import (
 
 type geminiGateway struct {
 	client *genai.Client
-	model *genai.GenerativeModel
+	model  *genai.GenerativeModel
 }
 
 // genai ライブラリを使ってクライアントを初期化
@@ -36,7 +36,7 @@ func (g *geminiGateway) Stop() error {
 
 func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.HackingPost) (*gateway.ExtractedHackingInfo, error) {
 	var extractedInfo gateway.ExtractedHackingInfo
-	
+
 	// プロトコル名抽出用のプロンプト
 	protocolNamePrompt := genai.Text(fmt.Sprintf(`
 		You are a specialized AI assistant for DeFi security analysis. Your task is to extract the name of the hacked DeFi protocol from the provided text and provide both the original and a cleaned version of the name.
@@ -142,8 +142,6 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 	} else {
 		extractedInfo.TagNames = []string{strings.ToLower(protocolNames[1])}
 	}
-
-
 
 	return &extractedInfo, nil
 }

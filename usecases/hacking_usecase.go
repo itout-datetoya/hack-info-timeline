@@ -3,27 +3,27 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"github.com/itout-datetoya/hack-info-timeline/domain/entity"
+	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
+	"github.com/itout-datetoya/hack-info-timeline/domain/repository"
 	"log"
 	"sync"
-	"github.com/itout-datetoya/hack-info-timeline/domain/entity"
-	"github.com/itout-datetoya/hack-info-timeline/domain/repository"
-	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 )
 
 // ハッキング情報に関するユースケース
 type HackingUsecase struct {
-	repo 				repository.HackingRepository
-	telegramGateways	[]gateway.TelegramHackingPostGateway
-	geminiGateway		gateway.GeminiGateway
-	mu            		sync.Mutex
+	repo             repository.HackingRepository
+	telegramGateways []gateway.TelegramHackingPostGateway
+	geminiGateway    gateway.GeminiGateway
+	mu               sync.Mutex
 }
 
 // 新しいHackingUsecaseを生成
 func NewHackingUsecase(repo repository.HackingRepository, telegramGateways []gateway.TelegramHackingPostGateway, geminiGateway gateway.GeminiGateway) *HackingUsecase {
 	return &HackingUsecase{
-		repo: repo,
+		repo:             repo,
 		telegramGateways: telegramGateways,
-		geminiGateway: geminiGateway,
+		geminiGateway:    geminiGateway,
 	}
 }
 
@@ -56,14 +56,14 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 			newPosts, err := gw.GetPosts(ctx, limit)
 			if err != nil {
 				errsChan <- fmt.Errorf("failed to get posts from telegram: %w", err)
-				return 
+				return
 			}
 			uc.mu.Lock()
 			posts = append(posts, newPosts...)
 			uc.mu.Unlock()
 		}(gw)
 	}
-	
+
 	wg.Wait()
 	close(errsChan)
 
@@ -97,7 +97,7 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 			}
 		}(post)
 	}
-	
+
 	wg.Wait()
 	close(errsChan)
 
@@ -123,13 +123,12 @@ func (uc *HackingUsecase) processSinglePost(ctx context.Context, post *gateway.H
 	}
 
 	infoToStore := &entity.HackingInfo{
-	Protocol:	extractedInfo.Protocol,
-	Network:	extractedInfo.Network,
-	Amount:		extractedInfo.Amount,
-	TxHash:		extractedInfo.TxHash,
-	ReportTime:	post.ReportTime,
+		Protocol:   extractedInfo.Protocol,
+		Network:    extractedInfo.Network,
+		Amount:     extractedInfo.Amount,
+		TxHash:     extractedInfo.TxHash,
+		ReportTime: post.ReportTime,
 	}
-
 
 	// DBに保存
 	_, err = uc.repo.StoreInfo(ctx, infoToStore, extractedInfo.TagNames)

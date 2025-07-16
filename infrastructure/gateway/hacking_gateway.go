@@ -4,22 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
+	"log"
 	"strings"
 	"sync"
 	"time"
-	"log"
-	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 
 	"github.com/gotd/td/tg"
 )
 
 // TelegramHackingPostGatewayを実装する構造体
 type telegramHackingPostGateway struct {
-	manager			*TelegramClientManager
+	manager         *TelegramClientManager
 	channelUsername string
-	channel     	*tg.Channel
-	lastMessageID	int
-	mu            	sync.Mutex
+	channel         *tg.Channel
+	lastMessageID   int
+	mu              sync.Mutex
 }
 
 // 新しいtelegramHackingPostGatewayを生成
@@ -53,7 +53,7 @@ func (g *telegramHackingPostGateway) GetPosts(ctx context.Context, limit int) ([
 	// 最後に取得した投稿以降、最新の投稿を取得
 	history, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
 		Peer:  inputPeer,
-		MinID: g.lastMessageID, 
+		MinID: g.lastMessageID,
 		Limit: limit,
 	})
 	if err != nil {

@@ -21,7 +21,7 @@ func NewHackingRepository(db *sqlx.DB) *hackingRepository {
 // 指定したタグ名に一致する情報を指定の件数取得
 func (r *hackingRepository) GetInfosByTagNames(ctx context.Context, tagNames []string, infoNumber int) ([]*entity.HackingInfo, error) {
 	// 条件に合うハッキング情報を取得
-	
+
 	// ハッキング情報テーブルから重複を排除して選択
 	query := `
 		SELECT DISTINCT
@@ -47,7 +47,6 @@ func (r *hackingRepository) GetInfosByTagNames(ctx context.Context, tagNames []s
 			return nil, fmt.Errorf("failed to expand IN clause: %w", err)
 		}
 	}
-
 
 	// ID順に整列、指定件数取得
 	query += " ORDER BY hi.id DESC LIMIT ?"
@@ -122,7 +121,7 @@ func (r *hackingRepository) GetInfosByTagNames(ctx context.Context, tagNames []s
 // 指定したタグ名に一致する情報の内、指定した情報より過去から指定の件数取得
 func (r *hackingRepository) GetPrevInfosByTagNames(ctx context.Context, tagNames []string, prevInfoID int64, infoNumber int) ([]*entity.HackingInfo, error) {
 	// 条件に合うハッキング情報を取得
-	
+
 	// ハッキング情報テーブルから重複を排除して選択
 	query := `
 		SELECT DISTINCT

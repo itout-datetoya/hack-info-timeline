@@ -2,21 +2,21 @@ package main
 
 import (
 	"context"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
-	"time"
 	"errors"
-	"strings"
-	"path/filepath"
 	dm_gateway "github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 	"github.com/itout-datetoya/hack-info-timeline/infrastructure/datastore"
 	"github.com/itout-datetoya/hack-info-timeline/infrastructure/gateway"
 	if_http "github.com/itout-datetoya/hack-info-timeline/interfaces/http"
 	"github.com/itout-datetoya/hack-info-timeline/usecases"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -48,10 +48,10 @@ func main() {
 	telegramTransferChannels := strings.Split(os.Getenv("TELEGRAM_TRANSFER_CHANNEL_USERNAMES"), ",")
 
 	if telegramAppIDStr == "" || telegramAppHash == "" || telegramHackingChannels[0] == "" ||
-		 telegramTransferChannels[0] == "" || telegramPhoneNumber == "" ||
-		  geminiAPIKey == "" ||
-		  	dbConnStr == "" ||
-				jsonString == ""{
+		telegramTransferChannels[0] == "" || telegramPhoneNumber == "" ||
+		geminiAPIKey == "" ||
+		dbConnStr == "" ||
+		jsonString == "" {
 		log.Fatal("User environment variables not fully set.")
 		return
 	}
@@ -79,7 +79,6 @@ func main() {
 		return
 	}
 	defer db.Close()
-
 
 	dirPath := ".td"
 	filePath := filepath.Join(dirPath, "session.json")
@@ -125,22 +124,22 @@ func main() {
 	// 各gatewayの初期化
 	var telegramHackingGateways []dm_gateway.TelegramHackingPostGateway
 	for _, channel := range telegramHackingChannels {
-		telegramHackingGateways = append(telegramHackingGateways, 
+		telegramHackingGateways = append(telegramHackingGateways,
 			gateway.NewTelegramHackingPostGateway(
 				telegramClientManager,
 				channel,
-		))
+			))
 	}
 
 	var telegramTransferGateways []dm_gateway.TelegramTransferPostGateway
 	for _, channel := range telegramTransferChannels {
-		telegramTransferGateways = append(telegramTransferGateways, 
+		telegramTransferGateways = append(telegramTransferGateways,
 			gateway.NewTelegramTransferPostGateway(
 				telegramClientManager,
 				channel,
-		))
+			))
 	}
-	
+
 	geminiGateway, err := gateway.NewGeminiGateway(ctx, geminiAPIKey)
 	if err != nil {
 		log.Fatalf("Failed to initialize Gemini Gateway: %v", err)
@@ -181,7 +180,7 @@ func main() {
 			select {
 			case <-ticker.C:
 				log.Println("Periodic scraping process started...")
-				
+
 				scrapeCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 				if _, errs := hackingUsecase.ScrapeAndStore(scrapeCtx, 100); len(errs) > 0 {
 					log.Printf("Periodic hacking info scraping finished with errors: %v", errs)
