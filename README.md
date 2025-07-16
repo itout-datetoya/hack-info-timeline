@@ -25,6 +25,7 @@
 このサービスは、以下のコンポーネントで構成されています。データの流れは、主に「定期的なデータ収集処理」と「ユーザーへのデータ表示処理」の2種類です。
 
 ```mermaid
+graph TD
     subgraph "バックエンド (Render)"
         C[Go API Server]
     end
@@ -48,6 +49,7 @@
 
 
 ```mermaid
+graph TD
     subgraph "ユーザー"
         A[ブラウザ]
     end
