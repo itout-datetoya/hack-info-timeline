@@ -48,8 +48,8 @@ func (r *hackingRepository) GetInfosByTagNames(ctx context.Context, tagNames []s
 		}
 	}
 
-	// ID順に整列、指定件数取得
-	query += " ORDER BY hi.id DESC LIMIT ?"
+	// タイムスタンプ順に整列、指定件数取得
+	query += " ORDER BY hi.report_time DESC LIMIT ?"
 	args = append(args, infoNumber)
 
 	// データベースドライバに合わせてプレースホルダーを変換
@@ -159,8 +159,8 @@ func (r *hackingRepository) GetPrevInfosByTagNames(ctx context.Context, tagNames
 		}
 	}
 
-	// ID順に整列、指定件数取得
-	query += " ORDER BY hi.id DESC LIMIT ?"
+	// タイムスタンプ順に整列、指定件数取得
+	query += " ORDER BY hi.report_time DESC LIMIT ?"
 	args = append(args, infoNumber)
 	// データベースドライバに合わせてプレースホルダーを変換
 	query = r.db.Rebind(query)
