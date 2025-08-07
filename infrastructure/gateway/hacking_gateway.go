@@ -19,6 +19,7 @@ type telegramHackingPostGateway struct {
 	channelUsername string
 	channel         *tg.Channel
 	lastMessageID   int
+	oldestMessageID	int
 	mu              sync.Mutex
 }
 
@@ -27,7 +28,7 @@ func NewTelegramHackingPostGateway(manager *TelegramClientManager, channelUserna
 	return &telegramHackingPostGateway{manager: manager, channelUsername: channelUsername}
 }
 
-// 最後に取得した投稿以降、最新の投稿を取得
+// 最後に取得した投稿以降、最新の投稿を100件以下取得
 func (g *telegramHackingPostGateway) GetPosts(ctx context.Context, limit int) ([]*gateway.HackingPost, error) {
 	api := g.manager.API()
 	if api == nil {
@@ -62,6 +63,87 @@ func (g *telegramHackingPostGateway) GetPosts(ctx context.Context, limit int) ([
 
 	// 取得した投稿の内、ハッキング情報を含むものをHackingPostに変換
 	return g.convertMessages(ctx, history)
+}
+
+// 最後に取得した投稿以降、最新の投稿を101件以上取得
+func (g *telegramHackingPostGateway) GetPostsOver100(ctx context.Context, limit int) ([]*gateway.HackingPost, error) {
+	api := g.manager.API()
+	if api == nil {
+		return nil, errors.New("telegram client is not ready")
+	}
+
+	// チャンネル名を解決してPeer情報を取得
+	resolved, err := api.ContactsResolveUsername(ctx, &tg.ContactsResolveUsernameRequest{
+		Username: g.channelUsername,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("gateway A: failed to resolve username %s: %w", g.channelUsername, err)
+	}
+	channel, ok := resolved.Chats[0].(*tg.Channel)
+	if !ok {
+		return nil, fmt.Errorf("gateway A: resolved peer is not a channel")
+	}
+	g.channel = channel
+	inputPeer := channel.AsInputPeer()
+
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	// 最後に取得した投稿以降、最新の投稿を101件以上取得
+	history, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
+		Peer:  inputPeer,
+		MinID: g.lastMessageID,
+		Limit: limit,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("gateway A: failed to get channel history: %w", err)
+	}
+	channelMessages, ok := history.(*tg.MessagesChannelMessages)
+	if !ok {
+		return nil, fmt.Errorf("gateway A: failed to cast history to ChannelMessages")
+	}
+
+	var allPosts []*gateway.HackingPost
+
+	posts, err := g.convertMessages(ctx, history)
+	if err != nil {
+		return nil, err
+	}
+	allPosts = append(allPosts, posts...)
+	getPostsNumber := len(channelMessages.Messages)
+	restLimit := limit - getPostsNumber
+
+	for restLimit > 0 && getPostsNumber > 0 {
+		history, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{
+			Peer:  inputPeer,
+			MaxID: g.oldestMessageID,
+			Limit: restLimit,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("gateway A: failed to get channel history: %w", err)
+		}
+		channelMessages, ok := history.(*tg.MessagesChannelMessages)
+		if !ok {
+			return nil, fmt.Errorf("gateway A: failed to cast history to ChannelMessages")
+		}
+
+		if len(channelMessages.Messages) == 1 {
+			message, ok := channelMessages.Messages[0].(*tg.Message)
+			if !ok || message.Message == "" {
+				break
+			}
+		}
+
+		posts, err := g.convertMessages(ctx, history)
+		if err != nil {
+			return nil, err
+		}
+		allPosts = append(allPosts, posts...)
+		getPostsNumber = len(channelMessages.Messages)
+		restLimit = restLimit - getPostsNumber
+	}
+
+	return allPosts, nil
 }
 
 // 取得した投稿の内、ハッキング情報を含むものをHackingPostに変換
@@ -115,6 +197,10 @@ func (g *telegramHackingPostGateway) convertMessages(ctx context.Context, histor
 			// 最後に取得した投稿のIDを更新
 			if message.ID > g.lastMessageID {
 				g.lastMessageID = message.ID
+			}
+			// 取得した投稿の中で最も古い投稿のIDを更新
+			if g.oldestMessageID == 0 || message.ID < g.oldestMessageID {
+				g.oldestMessageID = message.ID
 			}
 		}
 	}

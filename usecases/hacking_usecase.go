@@ -42,7 +42,7 @@ func (uc *HackingUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error)
 	return uc.repo.GetAllTags(ctx)
 }
 
-// Telegramから投稿を取得し、DBに保存
+// Telegramから100件以下の投稿を取得し、DBに保存
 func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, []error) {
 	// 全ての新しい投稿を取得
 	var wg sync.WaitGroup
@@ -54,6 +54,76 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 		go func(gw gateway.TelegramHackingPostGateway) {
 			defer wg.Done()
 			newPosts, err := gw.GetPosts(ctx, limit)
+			if err != nil {
+				errsChan <- fmt.Errorf("failed to get posts from telegram: %w", err)
+				return
+			}
+			uc.mu.Lock()
+			posts = append(posts, newPosts...)
+			uc.mu.Unlock()
+		}(gw)
+	}
+
+	wg.Wait()
+	close(errsChan)
+
+	var getPostsErrors []error
+	for err := range errsChan {
+		getPostsErrors = append(getPostsErrors, err)
+	}
+
+	if len(getPostsErrors) != 0 {
+		return 0, getPostsErrors
+	}
+
+	if len(posts) == 0 {
+		log.Println("Info: No new messages to process.")
+		return 0, nil
+	}
+
+	// 各投稿を並行処理
+	errsChan = make(chan error, len(posts))
+
+	for _, post := range posts {
+		wg.Add(1)
+		go func(p *gateway.HackingPost) {
+			defer wg.Done()
+
+			// 個別の投稿を処理するヘルパー関数
+			err := uc.processSinglePost(ctx, p)
+			if err != nil {
+				// エラーが発生したらチャンネルに送信
+				errsChan <- fmt.Errorf("failed to process post from %s: %w", p.Text, err)
+			}
+		}(post)
+	}
+
+	wg.Wait()
+	close(errsChan)
+
+	var allErrors []error
+	for err := range errsChan {
+		allErrors = append(allErrors, err)
+	}
+
+	processedCount := len(posts) - len(allErrors)
+	log.Printf("Scraping finished. Processed: %d, Errors: %d", processedCount, len(allErrors))
+
+	return processedCount, allErrors
+}
+
+// Telegramから101件以上の投稿を取得し、DBに保存
+func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) (int, []error) {
+	// 全ての新しい投稿を取得
+	var wg sync.WaitGroup
+	errsChan := make(chan error, len(uc.telegramGateways))
+	var posts []*gateway.HackingPost
+
+	for _, gw := range uc.telegramGateways {
+		wg.Add(1)
+		go func(gw gateway.TelegramHackingPostGateway) {
+			defer wg.Done()
+			newPosts, err := gw.GetPostsOver100(ctx, limit)
 			if err != nil {
 				errsChan <- fmt.Errorf("failed to get posts from telegram: %w", err)
 				return
