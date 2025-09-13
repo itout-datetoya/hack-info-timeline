@@ -49,6 +49,7 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
     		b. Removing generic suffixes and domain extensions. This includes parts like .fi, .finance, .protocol, and any top-level domain (e.g., .trade, .exchange, .xyz). The goal is to get the core name.
 		4. Return a single line of text with the original name and the cleaned name separated by a comma. Do not add any spaces around the comma.
 		5. The required format is: OriginalName,cleanedname
+		6.  If no specific protocol names are mentioned as being involved in the hack, return the exact text "N/A".
 
 		For example:
 		- Text: "Attack on Resupply.fi" -> Response: Resupply.fi,resupply
@@ -80,6 +81,13 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 
 	// カンマで分割
 	protocolNames := strings.Split(string(protocolNamesStr), ",")
+
+	// プロトコル名のバリデーション
+	if strings.Contains(string(protocolNamesStr), "N/A") ||
+		 len(protocolNames[0]) == 0 || len(protocolNames[0]) >= 20 {
+		protocolNames[0] = "N/A"
+		protocolNames[1] = "Protocol:N/A"
+	}
 
 	// トークン名抽出用のプロンプト
 	tokenPrompt := genai.Text(fmt.Sprintf(`
