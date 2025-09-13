@@ -40,6 +40,17 @@ func (uc *TransferUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error
 	return uc.repo.GetAllTags(ctx)
 }
 
+func (uc *TransferUsecase) SetLastMessageIDToGateway(ctx context.Context) error {
+	lastInfo, err := uc.GetLatestTimeline(ctx, []string{}, 1)
+	if err != nil {
+		return err
+	}
+
+	uc.telegramGateways[0].SetLastMessageID(lastInfo[0].MessageID)
+
+	return nil
+}
+
 // Telegramから投稿を取得し、DBに保存
 func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, []error) {
 	// 全ての新しい投稿を取得

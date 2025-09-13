@@ -28,6 +28,10 @@ func NewTelegramTransferPostGateway(manager *TelegramClientManager, channelUsern
 	return &telegramTransferPostGateway{manager: manager, channelUsername: channelUsername}
 }
 
+func (g *telegramTransferPostGateway) SetLastMessageID (lastMessageID int) {
+	g.lastMessageID = lastMessageID
+}
+
 // 最後に取得した投稿以降、最新の投稿を取得
 func (g *telegramTransferPostGateway) GetPosts(ctx context.Context, limit int) ([]*gateway.TransferPost, error) {
 	api := g.manager.API()

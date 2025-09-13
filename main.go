@@ -161,6 +161,15 @@ func main() {
 		log.Println("Initial scraping process started...")
 		initialScrapeCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 
+		err = hackingUsecase.SetLastMessageIDToGateway(initialScrapeCtx)
+		if err != nil {
+			log.Printf("%v", err)
+		}
+		err = transferUsecase.SetLastMessageIDToGateway(initialScrapeCtx)
+		if err != nil {
+			log.Printf("%v", err)
+		}
+
 		if _, errs := hackingUsecase.ScrapeAndStore(initialScrapeCtx, 200); len(errs) > 0 {
 			log.Printf("Initial hacking info scraping finished with errors: %v", errs)
 		} else {
