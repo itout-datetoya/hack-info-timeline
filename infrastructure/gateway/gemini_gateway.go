@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
-	"strings"
 	"math/rand/v2"
+	"strings"
 	"time"
 
 	"github.com/google/generative-ai-go/genai"
@@ -68,7 +68,7 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 	// geminiAPI呼び出し(プロトコル名)
 	protocolNameResp, err := g.model.GenerateContent(ctx, protocolNamePrompt)
 	if err != nil {
-		time.Sleep(time.Duration(1)+rand.N(4*time.Second))
+		time.Sleep(time.Duration(1) + rand.N(4*time.Second))
 
 		protocolNameResp, err = g.model.GenerateContent(ctx, protocolNamePrompt)
 		if err != nil {
@@ -130,7 +130,7 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 	// geminiAPI呼び出し(トークン名)
 	tokenResp, err := g.model.GenerateContent(ctx, tokenPrompt)
 	if err != nil {
-		time.Sleep(time.Duration(1)+rand.N(4*time.Second))
+		time.Sleep(time.Duration(1) + rand.N(4*time.Second))
 
 		tokenResp, err = g.model.GenerateContent(ctx, tokenPrompt)
 		if err != nil {
