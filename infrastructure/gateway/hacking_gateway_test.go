@@ -131,7 +131,7 @@ func TestHackingGatewayGetPosts(t *testing.T) {
 	}
 }
 
-func TestHackingGatewayGetPostsOver100(t *testing.T) {
+func TestHackingGatewayGetOver100Posts(t *testing.T) {
 	config := zap.NewDevelopmentConfig()
 	config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
 	logger, _ := config.Build()
