@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 	"strings"
+	"math/rand/v2"
+	"time"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
@@ -66,7 +68,12 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 	// geminiAPI呼び出し(プロトコル名)
 	protocolNameResp, err := g.model.GenerateContent(ctx, protocolNamePrompt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate content from Gemini API: %w", err)
+		time.Sleep(time.Duration(1)+rand.N(4*time.Second))
+
+		protocolNameResp, err = g.model.GenerateContent(ctx, protocolNamePrompt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate content from Gemini API: %w", err)
+		}
 	}
 
 	if len(protocolNameResp.Candidates) == 0 || len(protocolNameResp.Candidates[0].Content.Parts) == 0 {
@@ -123,7 +130,12 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 	// geminiAPI呼び出し(トークン名)
 	tokenResp, err := g.model.GenerateContent(ctx, tokenPrompt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate content from Gemini API: %w", err)
+		time.Sleep(time.Duration(1)+rand.N(4*time.Second))
+
+		tokenResp, err = g.model.GenerateContent(ctx, tokenPrompt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate content from Gemini API: %w", err)
+		}
 	}
 
 	if len(tokenResp.Candidates) == 0 || len(tokenResp.Candidates[0].Content.Parts) == 0 {
