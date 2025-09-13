@@ -209,7 +209,7 @@ func (uc *HackingUsecase) processSinglePost(ctx context.Context, post *gateway.H
 		Amount:     extractedInfo.Amount,
 		TxHash:     extractedInfo.TxHash,
 		ReportTime: post.ReportTime,
-		MessageID: post.MessageID,
+		MessageID:  post.MessageID,
 	}
 
 	// DBに保存

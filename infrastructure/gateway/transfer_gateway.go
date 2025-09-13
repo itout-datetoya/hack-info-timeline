@@ -28,7 +28,7 @@ func NewTelegramTransferPostGateway(manager *TelegramClientManager, channelUsern
 	return &telegramTransferPostGateway{manager: manager, channelUsername: channelUsername}
 }
 
-func (g *telegramTransferPostGateway) SetLastMessageID (lastMessageID int) {
+func (g *telegramTransferPostGateway) SetLastMessageID(lastMessageID int) {
 	g.lastMessageID = lastMessageID
 }
 

@@ -19,7 +19,7 @@ type telegramHackingPostGateway struct {
 	channelUsername string
 	channel         *tg.Channel
 	lastMessageID   int
-	oldestMessageID	int
+	oldestMessageID int
 	mu              sync.Mutex
 }
 
@@ -28,7 +28,7 @@ func NewTelegramHackingPostGateway(manager *TelegramClientManager, channelUserna
 	return &telegramHackingPostGateway{manager: manager, channelUsername: channelUsername}
 }
 
-func (g *telegramHackingPostGateway) SetLastMessageID (lastMessageID int) {
+func (g *telegramHackingPostGateway) SetLastMessageID(lastMessageID int) {
 	g.lastMessageID = lastMessageID
 }
 

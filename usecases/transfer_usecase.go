@@ -131,7 +131,7 @@ func (uc *TransferUsecase) processSinglePost(ctx context.Context, post *gateway.
 		From:       post.From,
 		To:         post.To,
 		ReportTime: post.ReportTime,
-		MessageID: post.MessageID,
+		MessageID:  post.MessageID,
 	}
 
 	// DBに保存

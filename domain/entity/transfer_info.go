@@ -10,6 +10,6 @@ type TransferInfo struct {
 	From       string    `db:"from_address"`
 	To         string    `db:"to_address"`
 	ReportTime time.Time `db:"report_time"`
-	MessageID  int     `db:"message_id"`
+	MessageID  int       `db:"message_id"`
 	Tags       []*Tag
 }

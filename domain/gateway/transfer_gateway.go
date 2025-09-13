@@ -18,6 +18,6 @@ type TransferPost struct {
 
 // Telegram APIとの送金情報の通信を抽象化
 type TelegramTransferPostGateway interface {
-	SetLastMessageID (lastMessageID int)
+	SetLastMessageID(lastMessageID int)
 	GetPosts(ctx context.Context, limit int) ([]*TransferPost, error)
 }

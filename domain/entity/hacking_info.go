@@ -10,6 +10,6 @@ type HackingInfo struct {
 	Amount     string    `db:"amount"`
 	TxHash     string    `db:"tx_hash"`
 	ReportTime time.Time `db:"report_time"`
-	MessageID  int     `db:"message_id"`
+	MessageID  int       `db:"message_id"`
 	Tags       []*Tag
 }
