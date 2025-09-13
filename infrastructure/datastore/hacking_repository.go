@@ -25,7 +25,7 @@ func (r *hackingRepository) GetInfosByTagNames(ctx context.Context, tagNames []s
 	// ハッキング情報テーブルから重複を排除して選択
 	query := `
 		SELECT DISTINCT
-			hi.id, hi.protocol, hi.network, hi.amount, hi.tx_hash, hi.report_time
+			hi.id, hi.protocol, hi.network, hi.amount, hi.tx_hash, hi.report_time, hi.message_id
 		FROM hacking_infos hi
 	`
 
@@ -125,7 +125,7 @@ func (r *hackingRepository) GetPrevInfosByTagNames(ctx context.Context, tagNames
 	// ハッキング情報テーブルから重複を排除して選択
 	query := `
 		SELECT DISTINCT
-			hi.id, hi.protocol, hi.network, hi.amount, hi.tx_hash, hi.report_time
+			hi.id, hi.protocol, hi.network, hi.amount, hi.tx_hash, hi.report_time, hi.message_id
 		FROM hacking_infos hi
 	`
 
@@ -250,8 +250,8 @@ func (r *hackingRepository) StoreInfo(ctx context.Context, info *entity.HackingI
 
 	// ハッキング情報を保存するクエリ文を設定
 	stmt, err := tx.PrepareNamedContext(ctx, `
-		INSERT INTO hacking_infos (protocol, network, amount, tx_hash, report_time)
-		VALUES (:protocol, :network, :amount, :tx_hash, :report_time)
+		INSERT INTO hacking_infos (protocol, network, amount, tx_hash, report_time, message_id)
+		VALUES (:protocol, :network, :amount, :tx_hash, :report_time, :message_id)
 		RETURNING id
 	`)
 	if err != nil {

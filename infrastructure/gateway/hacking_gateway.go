@@ -186,6 +186,7 @@ func (g *telegramHackingPostGateway) convertMessages(ctx context.Context, histor
 							// 投稿内容を添付
 							date := repliedMessage.GetDate()
 							post.ReportTime = time.Unix(int64(date), 0)
+							post.MessageID = message.ID
 							post.Text = message.Message
 							posts = append(posts, post)
 						} else {

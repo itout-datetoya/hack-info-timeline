@@ -12,6 +12,7 @@ type HackingPost struct {
 	Amount     string
 	TxHash     string
 	ReportTime time.Time
+	MessageID  int
 }
 
 // 抽出されたハッキング情報

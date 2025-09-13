@@ -84,6 +84,7 @@ func (g *telegramTransferPostGateway) convertMessages(history tg.MessagesMessage
 				// 投稿から時間を取得
 				date := message.GetDate()
 				post.ReportTime = time.Unix(int64(date), 0)
+				post.MessageID = message.ID
 
 				// 投稿からタグを取得
 				tagNames := g.extractTags(message.Message, message.Entities)

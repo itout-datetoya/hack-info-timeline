@@ -5,7 +5,8 @@ CREATE TABLE hacking_infos (
     network VARCHAR(255) NOT NULL,
     amount VARCHAR(255) NOT NULL,
     tx_hash VARCHAR(255) NOT NULL UNIQUE,
-    report_time TIMESTAMPTZ NOT NULL
+    report_time TIMESTAMPTZ NOT NULL,
+    message_id INT NOT NULL
 );
 
 CREATE TABLE transfer_infos (
@@ -14,7 +15,8 @@ CREATE TABLE transfer_infos (
     amount VARCHAR(255) NOT NULL,
     from_address VARCHAR(255) NOT NULL,
     to_address VARCHAR(255) NOT NULL,
-    report_time TIMESTAMPTZ NOT NULL
+    report_time TIMESTAMPTZ NOT NULL,
+    message_id INT NOT NULL
 );
 
 CREATE TABLE tags (

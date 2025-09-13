@@ -25,7 +25,7 @@ func (r *transferRepository) GetInfosByTagNames(ctx context.Context, tagNames []
 	// 送金情報テーブルから重複を排除して選択
 	query := `
 		SELECT DISTINCT
-			ti.id, ti.token, ti.amount, ti.from_address, ti.to_address, ti.report_time
+			ti.id, ti.token, ti.amount, ti.from_address, ti.to_address, ti.report_time, ti.message_id
 		FROM transfer_infos ti
 	`
 
@@ -125,7 +125,7 @@ func (r *transferRepository) GetPrevInfosByTagNames(ctx context.Context, tagName
 	// 送金情報テーブルから重複を排除して選択
 	query := `
 		SELECT DISTINCT
-			ti.id, ti.token, ti.amount, ti.from_address, ti.to_address, ti.report_time
+			ti.id, ti.token, ti.amount, ti.from_address, ti.to_address, ti.report_time, ti.message_id
 		FROM transfer_infos ti
 	`
 
@@ -250,8 +250,8 @@ func (r *transferRepository) StoreInfo(ctx context.Context, info *entity.Transfe
 
 	// 送金情報を保存するクエリ文を設定
 	stmt, err := tx.PrepareNamedContext(ctx, `
-		INSERT INTO transfer_infos (token, amount, from_address, to_address, report_time)
-		VALUES (:token, :amount, :from_address, :to_address, :report_time)
+		INSERT INTO transfer_infos (token, amount, from_address, to_address, report_time, message_id)
+		VALUES (:token, :amount, :from_address, :to_address, :report_time, :message_id)
 		RETURNING id
 	`)
 	if err != nil {

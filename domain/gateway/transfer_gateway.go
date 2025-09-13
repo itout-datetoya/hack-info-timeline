@@ -12,6 +12,7 @@ type TransferPost struct {
 	From       string
 	To         string
 	ReportTime time.Time
+	MessageID  int
 	TagNames   []string
 }
 
