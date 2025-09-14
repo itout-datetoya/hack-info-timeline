@@ -23,3 +23,8 @@ CREATE TABLE tags (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE
 );
+
+CREATE TABLE telegram_channel (
+    username VARCHAR(255) PRIMARY KEY,
+    last_message_id INT NOT NULL
+);

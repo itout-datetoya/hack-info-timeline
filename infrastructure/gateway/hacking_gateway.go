@@ -32,6 +32,14 @@ func (g *telegramHackingPostGateway) SetLastMessageID(lastMessageID int) {
 	g.lastMessageID = lastMessageID
 }
 
+func (g *telegramHackingPostGateway) LastMessageID() int {
+	return g.lastMessageID
+}
+
+func (g *telegramHackingPostGateway) ChannelUsername() string {
+	return g.channelUsername
+}
+
 // 最後に取得した投稿以降、最新の投稿を100件以下取得
 func (g *telegramHackingPostGateway) GetPosts(ctx context.Context, limit int) ([]*gateway.HackingPost, error) {
 	api := g.manager.API()

@@ -203,6 +203,15 @@ func main() {
 					log.Println("Periodic transfer info scraping finished successfully.")
 				}
 
+				err := hackingUsecase.StoreLastMessageID(scrapeCtx)
+				if err != nil {
+					log.Printf("%v", err)
+				}
+				err = transferUsecase.StoreLastMessageID(scrapeCtx)
+				if err != nil {
+					log.Printf("%v", err)
+				}
+
 				cancel()
 
 			case <-ctx.Done():

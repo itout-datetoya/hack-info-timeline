@@ -27,6 +27,8 @@ type ExtractedHackingInfo struct {
 // Telegram APIとのハッキング情報の通信を抽象化
 type TelegramHackingPostGateway interface {
 	SetLastMessageID(lastMessageID int)
+	LastMessageID() int
+	ChannelUsername() string
 	GetPosts(ctx context.Context, limit int) ([]*HackingPost, error)
 	GetPostsOver100(ctx context.Context, limit int) ([]*HackingPost, error)
 }

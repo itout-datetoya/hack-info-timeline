@@ -43,12 +43,44 @@ func (uc *HackingUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error)
 }
 
 func (uc *HackingUsecase) SetLastMessageIDToGateway(ctx context.Context) error {
-	lastInfo, err := uc.GetLatestTimeline(ctx, []string{}, 1)
-	if err != nil {
-		return err
+	for _, gw := range uc.telegramGateways {
+		channelStatus, err := uc.repo.GetChannelStatusByUsername(ctx, gw.ChannelUsername())
+		if err != nil {
+			return fmt.Errorf("failed to get channel status: %w", err)
+		}
+		if channelStatus == nil {
+			newChannelStatus := entity.TelegramChannel{ChannelUsername: gw.ChannelUsername(), LastMessageID: 0}
+			err = uc.repo.StoreChannelStatus(ctx, &newChannelStatus)
+			if err != nil {
+				return fmt.Errorf("failed to store channel status: %w", err)
+			}
+		} else {
+			gw.SetLastMessageID(channelStatus.LastMessageID)
+		}
 	}
 
-	uc.telegramGateways[0].SetLastMessageID(lastInfo[0].MessageID)
+	return nil
+}
+
+func (uc *HackingUsecase) StoreLastMessageID(ctx context.Context) error {
+	for _, gw := range uc.telegramGateways {
+		newChannelStatus := entity.TelegramChannel{ChannelUsername: gw.ChannelUsername(), LastMessageID: gw.LastMessageID()}
+		channelStatus, err := uc.repo.GetChannelStatusByUsername(ctx, gw.ChannelUsername())
+		if err != nil {
+			return fmt.Errorf("failed to get channel status: %w", err)
+		}
+		if channelStatus == nil {
+			err = uc.repo.StoreChannelStatus(ctx, &newChannelStatus)
+			if err != nil {
+				return fmt.Errorf("failed to store channel status: %w", err)
+			}
+		} else {
+			err = uc.repo.UpdateChannelStatus(ctx, &newChannelStatus)
+			if err != nil {
+				return fmt.Errorf("failed to update channel status: %w", err)
+			}
+		}
+	}
 
 	return nil
 }

@@ -19,4 +19,11 @@ type TransferRepository interface {
 	// 新しい送金情報をトランザクション内で保存
 	// 新しいタグの保存と、中間テーブルへの関連付けも実行
 	StoreInfo(ctx context.Context, info *entity.TransferInfo, tagNames []string) (int64, error)
+
+	// チャンネル情報を保存
+	StoreChannelStatus(ctx context.Context, channelStatus *entity.TelegramChannel) error
+	// チャンネル情報を更新
+	UpdateChannelStatus(ctx context.Context, channelStatus *entity.TelegramChannel) error
+	// チャンネル情報を取得
+	GetChannelStatusByUsername(ctx context.Context, username string) (*entity.TelegramChannel, error)
 }

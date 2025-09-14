@@ -2,7 +2,10 @@ package datastore
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+
 	"github.com/itout-datetoya/hack-info-timeline/domain/entity"
 
 	"github.com/jmoiron/sqlx"
@@ -292,4 +295,89 @@ func (r *transferRepository) StoreInfo(ctx context.Context, info *entity.Transfe
 
 	// トランザクションをコミットして変更を確定
 	return infoID, tx.Commit()
+}
+
+// チャンネル情報をトランザクション内で保存
+func (r *transferRepository) StoreChannelStatus(ctx context.Context, channelStatus *entity.TelegramChannel) error {
+	// トランザクションを開始
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	// 関数を抜ける際にエラーがあればロールバック
+	defer tx.Rollback()
+
+	// チャンネル情報を保存するクエリ文を設定
+	stmt, err := tx.PrepareNamedContext(ctx, `
+		INSERT INTO telegram_channel (username, last_message_id)
+		VALUES (:username, :last_message_id)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	// チャンネル情報を `telegram_channel` テーブルに保存
+	if _, err := stmt.ExecContext(ctx, channelStatus); err != nil {
+		return fmt.Errorf("failed to execute statement: %w", err)
+	}
+
+	// トランザクションをコミットして変更を確定
+	return tx.Commit()
+}
+
+// チャンネル情報をトランザクション内で更新
+func (r *transferRepository) UpdateChannelStatus(ctx context.Context, channelStatus *entity.TelegramChannel) error {
+	// トランザクションを開始
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	// 関数を抜ける際にエラーがあればロールバック
+	defer tx.Rollback()
+
+	// チャンネル情報を保存するクエリ文を設定
+	stmt, err := tx.PrepareNamedContext(ctx, `
+		UPDATE telegram_channel
+		SET last_message_id = :last_message_id
+		WHERE username = :username
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	// チャンネル情報を `telegram_channel` テーブルに保存
+	if _, err := stmt.ExecContext(ctx, channelStatus); err != nil {
+		return fmt.Errorf("failed to execute statement: %w", err)
+	}
+
+	// トランザクションをコミットして変更を確定
+	return tx.Commit()
+}
+
+// usernameで指定されたチャンネル情報を1件取得
+func (r *transferRepository) GetChannelStatusByUsername(ctx context.Context, username string) (*entity.TelegramChannel, error) {
+	// 取得した結果を格納するための変数を宣言
+	var channel *entity.TelegramChannel
+
+	// チャンネル情報を取得するクエリ文
+	query := `
+		SELECT username, last_message_id
+		FROM telegram_channel
+		WHERE username = ?
+	`
+	// sqlx.GetContext を使用して、結果を channel 変数に直接マッピングします。
+	// クエリのプレースホルダは、使用するDBドライバに合わせて '?' や '$1' などを選択してください。
+	if err := r.db.GetContext(ctx, &channel, query, username); err != nil {
+		// 該当するレコードが1件もなかった場合、sql.ErrNoRows が返される
+		if errors.Is(err, sql.ErrNoRows) {
+			// 見つからなかった場合は、nil と nil を返す
+			return nil, nil
+		}
+		// その他のデータベースエラー
+		return nil, fmt.Errorf("failed to get channel: %w", err)
+	}
+
+	return channel, nil
 }

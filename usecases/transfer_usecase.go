@@ -51,6 +51,29 @@ func (uc *TransferUsecase) SetLastMessageIDToGateway(ctx context.Context) error 
 	return nil
 }
 
+func (uc *TransferUsecase) StoreLastMessageID(ctx context.Context) error {
+	for _, gw := range uc.telegramGateways {
+		newChannelStatus := entity.TelegramChannel{ChannelUsername: gw.ChannelUsername(), LastMessageID: gw.LastMessageID()}
+		channelStatus, err := uc.repo.GetChannelStatusByUsername(ctx, gw.ChannelUsername())
+		if err != nil {
+			return fmt.Errorf("failed to get channel status: %w", err)
+		}
+		if channelStatus == nil {
+			err = uc.repo.StoreChannelStatus(ctx, &newChannelStatus)
+			if err != nil {
+				return fmt.Errorf("failed to store channel status: %w", err)
+			}
+		} else {
+			err = uc.repo.UpdateChannelStatus(ctx, &newChannelStatus)
+			if err != nil {
+				return fmt.Errorf("failed to update channel status: %w", err)
+			}
+		}
+	}
+
+	return nil
+}
+
 // Telegramから投稿を取得し、DBに保存
 func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, []error) {
 	// 全ての新しい投稿を取得
