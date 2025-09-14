@@ -90,10 +90,11 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 	// 全ての新しい投稿を取得
 	var wg sync.WaitGroup
 	errsChan := make(chan error, len(uc.telegramGateways))
-	var posts []*gateway.HackingPost
+	var posts [][]*gateway.HackingPost
 
-	for _, gw := range uc.telegramGateways {
+	for i, gw := range uc.telegramGateways {
 		wg.Add(1)
+		posts = append(posts, []*gateway.HackingPost{})
 		go func(gw gateway.TelegramHackingPostGateway) {
 			defer wg.Done()
 			newPosts, err := gw.GetPosts(ctx, limit)
@@ -102,7 +103,7 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 				return
 			}
 			uc.mu.Lock()
-			posts = append(posts, newPosts...)
+			posts[i] = newPosts
 			uc.mu.Unlock()
 		}(gw)
 	}
@@ -119,40 +120,55 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 		return 0, getPostsErrors
 	}
 
-	if len(posts) == 0 {
-		log.Println("Info: No new messages to process.")
-		return 0, nil
-	}
-
-	// 各投稿を並行処理
-	errsChan = make(chan error, len(posts))
-
-	for _, post := range posts {
-		wg.Add(1)
-		go func(p *gateway.HackingPost) {
-			defer wg.Done()
-
-			// 個別の投稿を処理するヘルパー関数
-			err := uc.processSinglePost(ctx, p)
-			if err != nil {
-				// エラーが発生したらチャンネルに送信
-				errsChan <- fmt.Errorf("failed to process post from %s: %w", p.Text, err)
-			}
-		}(post)
-	}
-
-	wg.Wait()
-	close(errsChan)
-
 	var allErrors []error
-	for err := range errsChan {
-		allErrors = append(allErrors, err)
+	var allProcessedCount int
+
+	for i, gw := range uc.telegramGateways {
+		if len(posts[i]) == 0 {
+			continue
+		}
+
+		errsChan = make(chan error, len(posts[i]))
+		messageIDChan := make(chan int, len(posts[i]))
+
+		for _, post := range posts[i] {
+			wg.Add(1)
+			go func(p *gateway.HackingPost) {
+				defer wg.Done()
+
+				// 個別の投稿を処理するヘルパー関数
+				err := uc.processSinglePost(ctx, p)
+				if err != nil {
+					// エラーが発生したらチャネルに送信
+					errsChan <- fmt.Errorf("failed to process post %s: %w", p.TxHash, err)
+				} else {
+					messageIDChan <- p.MessageID
+				}
+			}(post)
+		}
+
+		wg.Wait()
+		close(errsChan)
+		close(messageIDChan)
+
+		var errors []error
+		for err := range errsChan {
+			errors = append(errors, err)
+		}
+
+		for messageID := range messageIDChan {
+			if messageID > gw.LastMessageID() {
+				gw.SetLastMessageID(messageID)
+			}
+		}
+
+		allErrors = append(allErrors, errors...)
+		allProcessedCount = allProcessedCount + len(posts[i]) - len(errors)
 	}
 
-	processedCount := len(posts) - len(allErrors)
-	log.Printf("Scraping finished. Processed: %d, Errors: %d", processedCount, len(allErrors))
+	log.Printf("Hacking Post: Scraping finished. Processed: %d, Errors: %d", allProcessedCount, len(allErrors))
 
-	return processedCount, allErrors
+	return allProcessedCount, allErrors
 }
 
 // Telegramから101件以上の投稿を取得し、DBに保存
@@ -160,10 +176,11 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 	// 全ての新しい投稿を取得
 	var wg sync.WaitGroup
 	errsChan := make(chan error, len(uc.telegramGateways))
-	var posts []*gateway.HackingPost
+	var posts [][]*gateway.HackingPost
 
-	for _, gw := range uc.telegramGateways {
+	for i, gw := range uc.telegramGateways {
 		wg.Add(1)
+		posts = append(posts, []*gateway.HackingPost{})
 		go func(gw gateway.TelegramHackingPostGateway) {
 			defer wg.Done()
 			newPosts, err := gw.GetPostsOver100(ctx, limit)
@@ -172,7 +189,7 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 				return
 			}
 			uc.mu.Lock()
-			posts = append(posts, newPosts...)
+			posts[i] = newPosts
 			uc.mu.Unlock()
 		}(gw)
 	}
@@ -189,40 +206,55 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 		return 0, getPostsErrors
 	}
 
-	if len(posts) == 0 {
-		log.Println("Info: No new messages to process.")
-		return 0, nil
-	}
-
-	// 各投稿を並行処理
-	errsChan = make(chan error, len(posts))
-
-	for _, post := range posts {
-		wg.Add(1)
-		go func(p *gateway.HackingPost) {
-			defer wg.Done()
-
-			// 個別の投稿を処理するヘルパー関数
-			err := uc.processSinglePost(ctx, p)
-			if err != nil {
-				// エラーが発生したらチャンネルに送信
-				errsChan <- fmt.Errorf("failed to process post from %s: %w", p.Text, err)
-			}
-		}(post)
-	}
-
-	wg.Wait()
-	close(errsChan)
-
 	var allErrors []error
-	for err := range errsChan {
-		allErrors = append(allErrors, err)
+	var allProcessedCount int
+
+	for i, gw := range uc.telegramGateways {
+		if len(posts[i]) == 0 {
+			continue
+		}
+
+		errsChan = make(chan error, len(posts[i]))
+		messageIDChan := make(chan int, len(posts[i]))
+
+		for _, post := range posts[i] {
+			wg.Add(1)
+			go func(p *gateway.HackingPost) {
+				defer wg.Done()
+
+				// 個別の投稿を処理するヘルパー関数
+				err := uc.processSinglePost(ctx, p)
+				if err != nil {
+					// エラーが発生したらチャネルに送信
+					errsChan <- fmt.Errorf("failed to process post from %s: %w", p.TxHash, err)
+				} else {
+					messageIDChan <- p.MessageID
+				}
+			}(post)
+		}
+
+		wg.Wait()
+		close(errsChan)
+		close(messageIDChan)
+
+		var errors []error
+		for err := range errsChan {
+			errors = append(errors, err)
+		}
+
+		for messageID := range messageIDChan {
+			if messageID > gw.LastMessageID() {
+				gw.SetLastMessageID(messageID)
+			}
+		}
+
+		allErrors = append(allErrors, errors...)
+		allProcessedCount = allProcessedCount + len(posts[i]) - len(errors)
 	}
 
-	processedCount := len(posts) - len(allErrors)
-	log.Printf("Scraping finished. Processed: %d, Errors: %d", processedCount, len(allErrors))
+	log.Printf("Scraping finished. Processed: %d, Errors: %d", allProcessedCount, len(allErrors))
 
-	return processedCount, allErrors
+	return allProcessedCount, allErrors
 }
 
 // 単一の投稿を処理するヘルパー関数
