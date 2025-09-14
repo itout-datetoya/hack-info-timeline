@@ -227,7 +227,7 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 
 // 単一の投稿を処理するヘルパー関数
 func (uc *HackingUsecase) processSinglePost(ctx context.Context, post *gateway.HackingPost) error {
-	log.Printf("Processing post: %s", post.Text)
+	log.Printf("Processing post: %s", post.TxHash)
 
 	// Geminiでテキストを分析
 	extractedInfo, err := uc.geminiGateway.AnalyzeAndExtract(ctx, post)
