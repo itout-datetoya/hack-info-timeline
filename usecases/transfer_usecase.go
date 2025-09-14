@@ -41,12 +41,21 @@ func (uc *TransferUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error
 }
 
 func (uc *TransferUsecase) SetLastMessageIDToGateway(ctx context.Context) error {
-	lastInfo, err := uc.GetLatestTimeline(ctx, []string{}, 1)
-	if err != nil {
-		return err
+	for _, gw := range uc.telegramGateways {
+		channelStatus, err := uc.repo.GetChannelStatusByUsername(ctx, gw.ChannelUsername())
+		if err != nil {
+			return fmt.Errorf("failed to get channel status: %w", err)
+		}
+		if channelStatus == nil {
+			newChannelStatus := entity.TelegramChannel{ChannelUsername: gw.ChannelUsername(), LastMessageID: 0}
+			err = uc.repo.StoreChannelStatus(ctx, &newChannelStatus)
+			if err != nil {
+				return fmt.Errorf("failed to store channel status: %w", err)
+			}
+		} else {
+			gw.SetLastMessageID(channelStatus.LastMessageID)
+		}
 	}
-
-	uc.telegramGateways[0].SetLastMessageID(lastInfo[0].MessageID)
 
 	return nil
 }
