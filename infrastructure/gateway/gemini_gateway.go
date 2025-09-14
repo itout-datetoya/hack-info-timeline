@@ -90,6 +90,10 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 	protocolNames := strings.Split(string(protocolNamesStr), ",")
 
 	// プロトコル名のバリデーション
+	if len(protocolNames) == 1 {
+			protocolNames = append(protocolNames, "")
+	}
+
 	if strings.Contains(string(protocolNamesStr), "N/A") ||
 		len(protocolNames[0]) == 0 || len(protocolNames[0]) >= 20 {
 		protocolNames[0] = "N/A"
