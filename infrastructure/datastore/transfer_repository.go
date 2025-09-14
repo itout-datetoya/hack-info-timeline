@@ -369,7 +369,7 @@ func (r *transferRepository) GetChannelStatusByUsername(ctx context.Context, use
 	`
 
 	query = r.db.Rebind(query)
-	
+
 	// sqlx.GetContext を使用して、結果を channel 変数に直接マッピングします。
 	// クエリのプレースホルダは、使用するDBドライバに合わせて '?' や '$1' などを選択してください。
 	if err := r.db.GetContext(ctx, &channel, query, username); err != nil {
