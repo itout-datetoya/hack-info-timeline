@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
+	"log"
 	"math/rand/v2"
 	"strings"
 	"time"
-	"log"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
