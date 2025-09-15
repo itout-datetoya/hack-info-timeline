@@ -58,6 +58,7 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 		- Text: "Sonne Finance was exploited" -> Response: Sonne Finance,sonne
 		- Text: "The Onyx Protocol hack" -> Response: Onyx Protocol,onyx
 		- Text: "An exploit on gradient.trade..." -> Response: gradient.trade,gradient
+		- Text: "Our system has detected a suspicious attack involving #PeapodsFinance @PeapodsFinance on #ETH" -> Response: PeapodsFinance,peapods
 
 		Now, analyze the following text and provide the response in the specified format.
 
