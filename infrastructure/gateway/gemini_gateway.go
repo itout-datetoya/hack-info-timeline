@@ -65,6 +65,8 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 		"%s"
 	`, post.Text))
 
+	time.Sleep(rand.N(5 * time.Second))
+
 	// geminiAPI呼び出し(プロトコル名)
 	protocolNameResp, err := g.model.GenerateContent(ctx, protocolNamePrompt)
 	if err != nil {
@@ -130,6 +132,8 @@ func (g *geminiGateway) AnalyzeAndExtract(ctx context.Context, post *gateway.Hac
 		Text:
 		"%s"
 	`, post.Text))
+
+	time.Sleep(rand.N(5 * time.Second))
 
 	// geminiAPI呼び出し(トークン名)
 	tokenResp, err := g.model.GenerateContent(ctx, tokenPrompt)
