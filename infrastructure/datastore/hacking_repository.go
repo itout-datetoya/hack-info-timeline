@@ -359,7 +359,7 @@ func (r *hackingRepository) UpdateChannelStatus(ctx context.Context, channelStat
 // usernameで指定されたチャンネル情報を1件取得
 func (r *hackingRepository) GetChannelStatusByUsername(ctx context.Context, username string) (*entity.TelegramChannel, error) {
 	// 取得した結果を格納するための変数を宣言
-	var channel *entity.TelegramChannel
+	var channel entity.TelegramChannel
 
 	// チャンネル情報を取得するクエリ文
 	query := `
@@ -382,5 +382,5 @@ func (r *hackingRepository) GetChannelStatusByUsername(ctx context.Context, user
 		return nil, fmt.Errorf("failed to get channel: %w", err)
 	}
 
-	return channel, nil
+	return &channel, nil
 }
