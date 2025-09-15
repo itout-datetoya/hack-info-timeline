@@ -132,22 +132,15 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 		messageIDChan := make(chan int, len(posts[i]))
 
 		for _, post := range posts[i] {
-			wg.Add(1)
-			go func(p *gateway.HackingPost) {
-				defer wg.Done()
-
-				// 個別の投稿を処理するヘルパー関数
-				err := uc.processSinglePost(ctx, p)
-				if err != nil {
-					// エラーが発生したらチャネルに送信
-					errsChan <- fmt.Errorf("failed to process post %s: %w", p.TxHash, err)
-				} else {
-					messageIDChan <- p.MessageID
-				}
-			}(post)
+			err := uc.processSinglePost(ctx, post)
+			if err != nil {
+				// エラーが発生したらチャネルに送信
+				errsChan <- fmt.Errorf("failed to process post %s: %w", post.TxHash, err)
+			} else {
+				messageIDChan <- post.MessageID
+			}
 		}
 
-		wg.Wait()
 		close(errsChan)
 		close(messageIDChan)
 

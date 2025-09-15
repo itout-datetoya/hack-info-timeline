@@ -152,14 +152,14 @@ func main() {
 	hackingHandler := if_http.NewHackingHandler(hackingUsecase)
 	transferHandler := if_http.NewTransferHandler(transferUsecase)
 
-	// 5分毎のTickerを作成
-	ticker := time.NewTicker(5 * time.Minute)
+	// 10分毎のTickerを作成
+	ticker := time.NewTicker(10 * time.Minute)
 
 	// 定期実行処理
 	go func() {
 		// サーバー起動時に一度即時実行
 		log.Println("Initial scraping process started...")
-		initialScrapeCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+		initialScrapeCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 
 		err = hackingUsecase.SetLastMessageIDToGateway(initialScrapeCtx)
 		if err != nil {
@@ -190,7 +190,7 @@ func main() {
 			case <-ticker.C:
 				log.Println("Periodic scraping process started...")
 
-				scrapeCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+				scrapeCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 				if _, errs := hackingUsecase.ScrapeAndStore(scrapeCtx, 100); len(errs) > 0 {
 					log.Printf("Periodic hacking info scraping finished with errors: %v", errs)
 				} else {
