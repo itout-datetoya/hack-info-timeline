@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/itout-datetoya/hack-info-timeline/domain/entity"
@@ -39,9 +40,11 @@ func (r *hackingRepository) GetAllTags(ctx context.Context) ([]*entity.Tag, erro
 
 	const key = "tags:all"
 
-	if tags, found := r.cache.Get(key); found {
-		if tags, ok := tags.([]*entity.Tag); ok {
+	if cachedTags, found := r.cache.Get(key); found {
+		if tags, ok := cachedTags.([]*entity.Tag); ok {
 			return tags, nil
+		} else {
+			log.Printf("cache corruption: expected []*entity.Tag, got %T", cachedTags)
 		}
 	}
 
