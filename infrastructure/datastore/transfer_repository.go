@@ -13,7 +13,7 @@ import (
 // HackingRepository インターフェースを実装する構造体
 type transferRepository struct {
 	dbRepo *dbTransferRepository
-	cache *cache.Cache
+	cache  *cache.Cache
 }
 
 // hackingRepository の新しいインスタンスを生成
@@ -37,14 +37,14 @@ func (r *transferRepository) GetPrevInfosByTagNames(ctx context.Context, tagName
 func (r *transferRepository) GetAllTags(ctx context.Context) ([]*entity.Tag, error) {
 	var tags []*entity.Tag
 
-    const key = "tags:all"
+	const key = "tags:all"
 
-    if tags, found := r.cache.Get(key); found {
-        if tags, ok := tags.([]*entity.Tag); ok {
-            return tags, nil
-        }
-    }
-	
+	if tags, found := r.cache.Get(key); found {
+		if tags, ok := tags.([]*entity.Tag); ok {
+			return tags, nil
+		}
+	}
+
 	tags, err := r.dbRepo.GetAllTags(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list tags: %w", err)
