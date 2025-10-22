@@ -40,6 +40,11 @@ func (uc *TransferUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error
 	return uc.repo.GetAllTags(ctx)
 }
 
+// DBからタグを取得してキャッシュに保存
+func (uc *TransferUsecase) SetTagToCache(ctx context.Context) error {
+	return uc.repo.SetTagToCache(ctx)
+}
+
 func (uc *TransferUsecase) SetLastMessageIDToGateway(ctx context.Context) error {
 	for _, gw := range uc.telegramGateways {
 		channelStatus, err := uc.repo.GetChannelStatusByUsername(ctx, gw.ChannelUsername())

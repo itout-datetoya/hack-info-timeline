@@ -42,6 +42,11 @@ func (uc *HackingUsecase) GetAllTags(ctx context.Context) ([]*entity.Tag, error)
 	return uc.repo.GetAllTags(ctx)
 }
 
+// DBからタグを取得してキャッシュに保存
+func (uc *HackingUsecase) SetTagToCache(ctx context.Context) error {
+	return uc.repo.SetTagToCache(ctx)
+}
+
 func (uc *HackingUsecase) SetLastMessageIDToGateway(ctx context.Context) error {
 	for _, gw := range uc.telegramGateways {
 		channelStatus, err := uc.repo.GetChannelStatusByUsername(ctx, gw.ChannelUsername())
