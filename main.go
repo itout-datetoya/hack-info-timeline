@@ -24,6 +24,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/patrickmn/go-cache"
 )
 
 func main() {
@@ -80,6 +81,9 @@ func main() {
 	}
 	defer db.Close()
 
+	// キャッシュの初期化
+	cache := cache.New(15*time.Minute, 20*time.Minute)
+
 	dirPath := ".td"
 	filePath := filepath.Join(dirPath, "session.json")
 
@@ -104,11 +108,12 @@ func main() {
 	// 依存性の注入 (DI)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	dbHackingRepo := datastore.NewDbHackingRepository(db)
+	dbTransferRepo := datastore.NewDbTransferRepository(db)
+	hackingRepo := datastore.NewHackingRepository(dbHackingRepo, cache)
+	transferRepo := datastore.NewTransferRepository(dbTransferRepo, cache)
 
-	hackingRepo := datastore.NewHackingRepository(db)
-	transferRepo := datastore.NewTransferRepository(db)
-
-	// ToDo Telegram Client Managerの初期化と接続
+	// Telegram Client Managerの初期化と接続
 	telegramClientManager := gateway.NewTelegramClientManager(
 		telegramAppID,
 		telegramAppHash,
@@ -182,6 +187,11 @@ func main() {
 			log.Println("Initial transfer info scraping finished successfully.")
 		}
 
+		err = hackingUsecase.SetTagToCache(initialScrapeCtx)
+		if err != nil {
+			log.Printf("%v", err)
+		}
+
 		cancel()
 
 		// Tickerとシャットダウンシグナルを待機
@@ -208,6 +218,11 @@ func main() {
 					log.Printf("%v", err)
 				}
 				err = transferUsecase.StoreLastMessageID(scrapeCtx)
+				if err != nil {
+					log.Printf("%v", err)
+				}
+
+				err = hackingUsecase.SetTagToCache(initialScrapeCtx)
 				if err != nil {
 					log.Printf("%v", err)
 				}

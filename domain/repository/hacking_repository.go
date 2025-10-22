@@ -16,6 +16,9 @@ type HackingRepository interface {
 	// 存在するすべてのタグを出力
 	GetAllTags(ctx context.Context) ([]*entity.Tag, error)
 
+	// DBからタグを取得してキャッシュに保存
+	SetTagToCache(ctx context.Context) error
+
 	// 新しいハッキング情報をトランザクション内で保存
 	// 新しいタグの保存と、中間テーブルへの関連付けも実行
 	StoreInfo(ctx context.Context, info *entity.HackingInfo, tagNames []string) (int64, error)
