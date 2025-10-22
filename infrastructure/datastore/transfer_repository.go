@@ -10,13 +10,13 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-// HackingRepository インターフェースを実装する構造体
+// TransferRepository インターフェースを実装する構造体
 type transferRepository struct {
 	dbRepo *dbTransferRepository
 	cache  *cache.Cache
 }
 
-// hackingRepository の新しいインスタンスを生成
+// transferRepository の新しいインスタンスを生成
 func NewTransferRepository(dbRepo *dbTransferRepository, cache *cache.Cache) *transferRepository {
 	return &transferRepository{dbRepo: dbRepo, cache: cache}
 }
@@ -68,7 +68,7 @@ func (r *transferRepository) SetTagToCache(ctx context.Context) error {
 	return nil
 }
 
-// 新しいハッキング情報と関連タグをトランザクション内で保存
+// 新しい送金情報と関連タグをトランザクション内で保存
 func (r *transferRepository) StoreInfo(ctx context.Context, info *entity.TransferInfo, tagNames []string) (int64, error) {
 
 	return r.dbRepo.StoreInfo(ctx, info, tagNames)
