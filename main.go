@@ -222,7 +222,7 @@ func main() {
 					log.Printf("%v", err)
 				}
 
-				err = hackingUsecase.SetTagToCache(initialScrapeCtx)
+				err = hackingUsecase.SetTagToCache(scrapeCtx)
 				if err != nil {
 					log.Printf("%v", err)
 				}
