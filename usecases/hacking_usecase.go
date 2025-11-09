@@ -3,11 +3,12 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"log"
+	"sync"
+
 	"github.com/itout-datetoya/hack-info-timeline/domain/entity"
 	"github.com/itout-datetoya/hack-info-timeline/domain/gateway"
 	"github.com/itout-datetoya/hack-info-timeline/domain/repository"
-	"log"
-	"sync"
 )
 
 // ハッキング情報に関するユースケース
@@ -15,15 +16,21 @@ type HackingUsecase struct {
 	repo             repository.HackingRepository
 	telegramGateways []gateway.TelegramHackingPostGateway
 	geminiGateway    gateway.GeminiGateway
+	retryQueue       [][]*gateway.HackingPost
 	mu               sync.Mutex
 }
 
 // 新しいHackingUsecaseを生成
 func NewHackingUsecase(repo repository.HackingRepository, telegramGateways []gateway.TelegramHackingPostGateway, geminiGateway gateway.GeminiGateway) *HackingUsecase {
+	retryQueue := [][]*gateway.HackingPost{}
+	for i := 0; i < len(telegramGateways); i++ {
+		retryQueue = append(retryQueue, []*gateway.HackingPost{})
+	}
 	return &HackingUsecase{
 		repo:             repo,
 		telegramGateways: telegramGateways,
 		geminiGateway:    geminiGateway,
+		retryQueue:       retryQueue,
 	}
 }
 
@@ -136,14 +143,27 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 		errsChan = make(chan error, len(posts[i]))
 		messageIDChan := make(chan int, len(posts[i]))
 
+		newRetryQueue := []*gateway.HackingPost{}
+
+		for _, post := range uc.retryQueue[i] {
+			err := uc.processSinglePost(ctx, post)
+			if err != nil {
+				// エラーが発生したらチャネルに送信、リトライキューに追加
+				errsChan <- fmt.Errorf("failed to process post %s: %w", post.TxHash, err)
+				newRetryQueue = append(newRetryQueue, post)
+			}
+		}
+
+		uc.retryQueue[i] = newRetryQueue
+
 		for _, post := range posts[i] {
 			err := uc.processSinglePost(ctx, post)
 			if err != nil {
-				// エラーが発生したらチャネルに送信
+				// エラーが発生したらチャネルに送信、リトライキューに追加
 				errsChan <- fmt.Errorf("failed to process post %s: %w", post.TxHash, err)
-			} else {
-				messageIDChan <- post.MessageID
+				uc.retryQueue[i] = append(uc.retryQueue[i], post)
 			}
+			messageIDChan <- post.MessageID
 		}
 
 		close(errsChan)
@@ -215,20 +235,27 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 		errsChan = make(chan error, len(posts[i]))
 		messageIDChan := make(chan int, len(posts[i]))
 
-		for _, post := range posts[i] {
-			wg.Add(1)
-			go func(p *gateway.HackingPost) {
-				defer wg.Done()
+		newRetryQueue := []*gateway.HackingPost{}
 
-				// 個別の投稿を処理するヘルパー関数
-				err := uc.processSinglePost(ctx, p)
-				if err != nil {
-					// エラーが発生したらチャネルに送信
-					errsChan <- fmt.Errorf("failed to process post from %s: %w", p.TxHash, err)
-				} else {
-					messageIDChan <- p.MessageID
-				}
-			}(post)
+		for _, post := range uc.retryQueue[i] {
+			err := uc.processSinglePost(ctx, post)
+			if err != nil {
+				// エラーが発生したらチャネルに送信、リトライキューに追加
+				errsChan <- fmt.Errorf("failed to process post %s: %w", post.TxHash, err)
+				newRetryQueue = append(newRetryQueue, post)
+			}
+		}
+
+		uc.retryQueue[i] = newRetryQueue
+
+		for _, post := range posts[i] {
+			err := uc.processSinglePost(ctx, post)
+			if err != nil {
+				// エラーが発生したらチャネルに送信、リトライキューに追加
+				errsChan <- fmt.Errorf("failed to process post %s: %w", post.TxHash, err)
+				uc.retryQueue[i] = append(uc.retryQueue[i], post)
+			}
+			messageIDChan <- post.MessageID
 		}
 
 		wg.Wait()
