@@ -22,10 +22,7 @@ type HackingUsecase struct {
 
 // 新しいHackingUsecaseを生成
 func NewHackingUsecase(repo repository.HackingRepository, telegramGateways []gateway.TelegramHackingPostGateway, geminiGateway gateway.GeminiGateway) *HackingUsecase {
-	retryQueue := [][]*gateway.HackingPost{}
-	for i := 0; i < len(telegramGateways); i++ {
-		retryQueue = append(retryQueue, []*gateway.HackingPost{})
-	}
+	retryQueue := make([][]*gateway.HackingPost, len(telegramGateways))
 	return &HackingUsecase{
 		repo:             repo,
 		telegramGateways: telegramGateways,
@@ -140,7 +137,7 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 			continue
 		}
 
-		errsChan = make(chan error, len(posts[i]))
+		errsChan = make(chan error, len(uc.retryQueue[i])+len(posts[i]))
 		messageIDChan := make(chan int, len(posts[i]))
 
 		newRetryQueue := []*gateway.HackingPost{}
@@ -232,7 +229,7 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 			continue
 		}
 
-		errsChan = make(chan error, len(posts[i]))
+		errsChan = make(chan error, len(uc.retryQueue[i])+len(posts[i]))
 		messageIDChan := make(chan int, len(posts[i]))
 
 		newRetryQueue := []*gateway.HackingPost{}
@@ -258,7 +255,6 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 			messageIDChan <- post.MessageID
 		}
 
-		wg.Wait()
 		close(errsChan)
 		close(messageIDChan)
 
