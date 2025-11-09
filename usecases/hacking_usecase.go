@@ -133,7 +133,7 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 	var allProcessedCount int
 
 	for i, gw := range uc.telegramGateways {
-		if len(posts[i]) == 0 {
+		if len(posts[i]) == 0 && len(uc.retryQueue[i]) == 0 {
 			continue
 		}
 
@@ -225,7 +225,7 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 	var allProcessedCount int
 
 	for i, gw := range uc.telegramGateways {
-		if len(posts[i]) == 0 {
+		if len(posts[i]) == 0 && len(uc.retryQueue[i]) == 0 {
 			continue
 		}
 
@@ -233,6 +233,7 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 		messageIDChan := make(chan int, len(posts[i]))
 
 		newRetryQueue := []*gateway.HackingPost{}
+		log.Printf("Start: %d posts in retry queue", len(uc.retryQueue[i]))
 
 		for _, post := range uc.retryQueue[i] {
 			err := uc.processSinglePost(ctx, post)
@@ -254,6 +255,8 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 			}
 			messageIDChan <- post.MessageID
 		}
+
+		log.Printf("End: %d posts in retry queue", len(uc.retryQueue[i]))
 
 		close(errsChan)
 		close(messageIDChan)
