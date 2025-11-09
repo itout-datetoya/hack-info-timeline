@@ -29,7 +29,7 @@ func NewGeminiGateway(ctx context.Context, apiKey string) (gateway.GeminiGateway
 	}
 
 	// 使用するモデルを指定
-	model := client.GenerativeModel("gemini-2.0-flash-lite")
+	model := client.GenerativeModel("gemini-2.5-flash-lite")
 	return &geminiGateway{client: client, model: model}, nil
 }
 
