@@ -4,7 +4,7 @@ CREATE TABLE hacking_infos (
     protocol VARCHAR(255) NOT NULL,
     network VARCHAR(255) NOT NULL,
     amount VARCHAR(255) NOT NULL,
-    tx_hash VARCHAR(255) NOT NULL UNIQUE,
+    tx_hash VARCHAR(255) NOT NULL,
     report_time TIMESTAMPTZ NOT NULL,
     message_id INT NOT NULL
 );
