@@ -87,8 +87,6 @@ func main() {
 	dirPath := ".td"
 	filePath := filepath.Join(dirPath, "session.json")
 
-	os.MkdirAll(dirPath, 0755)
-
 	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0755)
 	if err != nil {
 		if os.IsExist(err) {

@@ -27,6 +27,10 @@ WORKDIR /app
 COPY --from=builder /app/main .
 COPY --from=builder /app/migrations ./migrations
 
+RUN mkdir -p /app/.td && \
+    chown appuser:appuser /app/.td && \
+    chmod 755 /app/.td
+
 USER appuser
 
 EXPOSE 10000
