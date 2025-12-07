@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -r -u 1001 -U appuser
+RUN useradd -r -u 998 -U appuser
 
 WORKDIR /app
 
