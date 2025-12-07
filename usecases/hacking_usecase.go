@@ -151,6 +151,8 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 			}
 		}
 
+		allProcessedCount = allProcessedCount + len(uc.retryQueue[i])
+
 		uc.retryQueue[i] = newRetryQueue
 
 		for _, post := range posts[i] {
@@ -243,6 +245,8 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 				newRetryQueue = append(newRetryQueue, post)
 			}
 		}
+
+		allProcessedCount = allProcessedCount + len(uc.retryQueue[i])
 
 		uc.retryQueue[i] = newRetryQueue
 
