@@ -1,20 +1,34 @@
-FROM golang:1.23-alpine AS builder
+FROM golang:1.23-bookworm AS builder
 
 WORKDIR /app
 
 COPY go.mod go.sum ./
-RUN go mod download
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o main .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-w -s" -o main .
 
-FROM alpine:latest
+FROM debian:bookworm-slim
 
-COPY --from=builder /app/main /app/main
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/migrations ./migrations/
+RUN useradd -r -u 1001 -U appuser
+
+WORKDIR /app
+
+COPY --from=builder /app/main .
+COPY --from=builder /app/migrations ./migrations
+
+USER appuser
 
 EXPOSE 10000
 
-CMD ["/app/main"]
+CMD ["./main"]
