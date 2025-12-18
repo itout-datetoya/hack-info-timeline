@@ -123,13 +123,12 @@ func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, 
 	var allErrors []error
 	var allProcessedCount int
 
-	for i, gw := range uc.telegramGateways {
+	for i := range uc.telegramGateways {
 		if len(posts[i]) == 0 {
 			continue
 		}
 
 		errsChan = make(chan error, len(posts[i]))
-		messageIDChan := make(chan int, len(posts[i]))
 
 		for _, post := range posts[i] {
 			wg.Add(1)
@@ -141,25 +140,16 @@ func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, 
 				if err != nil {
 					// エラーが発生したらチャネルに送信
 					errsChan <- fmt.Errorf("failed to process post %s %s Transfer: %w", p.Amount, p.Token, err)
-				} else {
-					messageIDChan <- p.MessageID
 				}
 			}(post)
 		}
 
 		wg.Wait()
 		close(errsChan)
-		close(messageIDChan)
 
 		var errors []error
 		for err := range errsChan {
 			errors = append(errors, err)
-		}
-
-		for messageID := range messageIDChan {
-			if messageID > gw.LastMessageID() {
-				gw.SetLastMessageID(messageID)
-			}
 		}
 
 		allErrors = append(allErrors, errors...)

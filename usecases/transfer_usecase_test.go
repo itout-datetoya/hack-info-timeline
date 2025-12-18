@@ -377,194 +377,6 @@ func TestTransferSetTagToCache(t *testing.T) {
 	}
 }
 
-// ==================== State Management Tests ====================
-
-func TestTransferSetLastMessageIDToGateway(t *testing.T) {
-	tests := []struct {
-		name               string
-		channelUsernames   []string
-		existingStatus     map[string]*entity.TelegramChannel
-		getStatusError     error
-		storeStatusError   error
-		wantErr            bool
-		expectedLastMsgIDs map[string]int
-	}{
-		{
-			name:             "existing channels",
-			channelUsernames: []string{"channel1", "channel2"},
-			existingStatus: map[string]*entity.TelegramChannel{
-				"channel1": {ChannelUsername: "channel1", LastMessageID: 100},
-				"channel2": {ChannelUsername: "channel2", LastMessageID: 200},
-			},
-			getStatusError:   nil,
-			storeStatusError: nil,
-			wantErr:          false,
-			expectedLastMsgIDs: map[string]int{
-				"channel1": 100,
-				"channel2": 200,
-			},
-		},
-		{
-			name:             "new channels",
-			channelUsernames: []string{"newchannel"},
-			existingStatus:   map[string]*entity.TelegramChannel{},
-			getStatusError:   nil,
-			storeStatusError: nil,
-			wantErr:          false,
-			expectedLastMsgIDs: map[string]int{
-				"newchannel": 0,
-			},
-		},
-		{
-			name:               "get status error",
-			channelUsernames:   []string{"channel1"},
-			existingStatus:     nil,
-			getStatusError:     errors.New("database error"),
-			storeStatusError:   nil,
-			wantErr:            true,
-			expectedLastMsgIDs: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &mockTransferRepository{
-				getChannelStatusByUsernameFunc: func(ctx context.Context, username string) (*entity.TelegramChannel, error) {
-					if tt.getStatusError != nil {
-						return nil, tt.getStatusError
-					}
-					return tt.existingStatus[username], nil
-				},
-				storeChannelStatusFunc: func(ctx context.Context, channelStatus *entity.TelegramChannel) error {
-					return tt.storeStatusError
-				},
-			}
-
-			var gateways []gateway.TelegramTransferPostGateway
-			mockGateways := make(map[string]*mockTelegramTransferPostGateway)
-			for _, username := range tt.channelUsernames {
-				mockGW := &mockTelegramTransferPostGateway{
-					channelUsername: username,
-				}
-				mockGateways[username] = mockGW
-				gateways = append(gateways, mockGW)
-			}
-
-			uc := NewTransferUsecase(mockRepo, gateways)
-			ctx := context.Background()
-
-			err := uc.SetLastMessageIDToGateway(ctx)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SetLastMessageIDToGateway() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if !tt.wantErr && tt.expectedLastMsgIDs != nil {
-				for username, expectedID := range tt.expectedLastMsgIDs {
-					if mockGW, ok := mockGateways[username]; ok {
-						actualID := mockGW.LastMessageID()
-						if actualID != expectedID {
-							t.Errorf("Gateway %s LastMessageID = %d, want %d", username, actualID, expectedID)
-						}
-					}
-				}
-			}
-		})
-	}
-}
-
-func TestTransferStoreLastMessageID(t *testing.T) {
-	tests := []struct {
-		name              string
-		channelUsernames  []string
-		currentLastMsgIDs map[string]int
-		existingStatus    map[string]*entity.TelegramChannel
-		getStatusError    error
-		storeStatusError  error
-		updateStatusError error
-		wantErr           bool
-	}{
-		{
-			name:             "update existing channels",
-			channelUsernames: []string{"channel1", "channel2"},
-			currentLastMsgIDs: map[string]int{
-				"channel1": 150,
-				"channel2": 250,
-			},
-			existingStatus: map[string]*entity.TelegramChannel{
-				"channel1": {ChannelUsername: "channel1", LastMessageID: 100},
-				"channel2": {ChannelUsername: "channel2", LastMessageID: 200},
-			},
-			getStatusError:    nil,
-			storeStatusError:  nil,
-			updateStatusError: nil,
-			wantErr:           false,
-		},
-		{
-			name:             "store new channels",
-			channelUsernames: []string{"newchannel"},
-			currentLastMsgIDs: map[string]int{
-				"newchannel": 50,
-			},
-			existingStatus:    map[string]*entity.TelegramChannel{},
-			getStatusError:    nil,
-			storeStatusError:  nil,
-			updateStatusError: nil,
-			wantErr:           false,
-		},
-		{
-			name:             "get status error",
-			channelUsernames: []string{"channel1"},
-			currentLastMsgIDs: map[string]int{
-				"channel1": 150,
-			},
-			existingStatus:    nil,
-			getStatusError:    errors.New("database error"),
-			storeStatusError:  nil,
-			updateStatusError: nil,
-			wantErr:           true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &mockTransferRepository{
-				getChannelStatusByUsernameFunc: func(ctx context.Context, username string) (*entity.TelegramChannel, error) {
-					if tt.getStatusError != nil {
-						return nil, tt.getStatusError
-					}
-					return tt.existingStatus[username], nil
-				},
-				storeChannelStatusFunc: func(ctx context.Context, channelStatus *entity.TelegramChannel) error {
-					return tt.storeStatusError
-				},
-				updateChannelStatusFunc: func(ctx context.Context, channelStatus *entity.TelegramChannel) error {
-					return tt.updateStatusError
-				},
-			}
-
-			var gateways []gateway.TelegramTransferPostGateway
-			for _, username := range tt.channelUsernames {
-				mockGW := &mockTelegramTransferPostGateway{
-					channelUsername: username,
-					lastMessageID:   tt.currentLastMsgIDs[username],
-				}
-				gateways = append(gateways, mockGW)
-			}
-
-			uc := NewTransferUsecase(mockRepo, gateways)
-			ctx := context.Background()
-
-			err := uc.StoreLastMessageID(ctx)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("StoreLastMessageID() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 // ==================== Process Single Post Tests ====================
 
 func TestTransferProcessSinglePost(t *testing.T) {
@@ -633,7 +445,6 @@ func TestTransferScrapeAndStore(t *testing.T) {
 		processErrors      map[string]error // token+amount -> error
 		wantProcessedCount int
 		wantErrorCount     int
-		wantLastMessageIDs []int
 	}{
 		{
 			name:        "success case with single gateway",
@@ -650,7 +461,6 @@ func TestTransferScrapeAndStore(t *testing.T) {
 			processErrors:      map[string]error{},
 			wantProcessedCount: 3,
 			wantErrorCount:     0,
-			wantLastMessageIDs: []int{103},
 		},
 		{
 			name:        "success with multiple gateways",
@@ -671,7 +481,6 @@ func TestTransferScrapeAndStore(t *testing.T) {
 			processErrors:      map[string]error{},
 			wantProcessedCount: 5,
 			wantErrorCount:     0,
-			wantLastMessageIDs: []int{102, 203},
 		},
 		{
 			name:        "partial processing errors",
@@ -690,7 +499,6 @@ func TestTransferScrapeAndStore(t *testing.T) {
 			},
 			wantProcessedCount: 2,
 			wantErrorCount:     1,
-			wantLastMessageIDs: []int{103},
 		},
 		{
 			name:        "get posts error",
@@ -704,7 +512,6 @@ func TestTransferScrapeAndStore(t *testing.T) {
 			processErrors:      map[string]error{},
 			wantProcessedCount: 0,
 			wantErrorCount:     1,
-			wantLastMessageIDs: []int{0, 0},
 		},
 		{
 			name:               "no posts to process",
@@ -715,7 +522,6 @@ func TestTransferScrapeAndStore(t *testing.T) {
 			processErrors:      map[string]error{},
 			wantProcessedCount: 0,
 			wantErrorCount:     0,
-			wantLastMessageIDs: []int{0},
 		},
 	}
 
@@ -759,52 +565,13 @@ func TestTransferScrapeAndStore(t *testing.T) {
 				t.Errorf("ScrapeAndStore() errorCount = %d, want %d", len(errs), tt.wantErrorCount)
 			}
 
-			// Verify LastMessageID updates
-			for i, gw := range gateways {
-				actualID := gw.LastMessageID()
-				expectedID := tt.wantLastMessageIDs[i]
-				if actualID != expectedID {
-					t.Errorf("Gateway %d LastMessageID = %d, want %d", i, actualID, expectedID)
-				}
-			}
+			// LastMessageIDの更新責務はGatewayへ移動したため、
+			// Usecase側での検証は行いません。
 		})
 	}
 }
 
-func TestTransferScrapeAndStore_MessageIDUpdate(t *testing.T) {
-	t.Run("message ID updates to maximum", func(t *testing.T) {
-		mockRepo := &mockTransferRepository{
-			storeInfoFunc: func(ctx context.Context, info *entity.TransferInfo, tagNames []string) (int64, error) {
-				return 1, nil
-			},
-		}
-
-		mockGW := &mockTelegramTransferPostGateway{
-			channelUsername: "channel1",
-			lastMessageID:   50, // Starting ID
-			getPostsFunc: func(ctx context.Context, limit int) ([]*gateway.TransferPost, error) {
-				return []*gateway.TransferPost{
-					createTestTransferPost(55, "USDC", "1000000"),
-					createTestTransferPost(101, "ETH", "500000"), // Maximum
-					createTestTransferPost(75, "DAI", "2000000"),
-					createTestTransferPost(60, "USDT", "1500000"),
-				}, nil
-			},
-		}
-
-		uc := NewTransferUsecase(mockRepo, []gateway.TelegramTransferPostGateway{mockGW})
-		ctx := context.Background()
-
-		_, _ = uc.ScrapeAndStore(ctx, 10)
-
-		// Should update to maximum message ID
-		actualID := mockGW.LastMessageID()
-		expectedID := 101
-		if actualID != expectedID {
-			t.Errorf("LastMessageID = %d, want %d", actualID, expectedID)
-		}
-	})
-}
+// Usecase側でのLastMessageID更新テストは責務変更により削除しました。
 
 // ==================== Concurrency Tests ====================
 

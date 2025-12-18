@@ -129,13 +129,12 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 	var allErrors []error
 	var allProcessedCount int
 
-	for i, gw := range uc.telegramGateways {
+	for i := range uc.telegramGateways {
 		if len(posts[i]) == 0 && len(uc.retryQueue[i]) == 0 {
 			continue
 		}
 
 		errsChan = make(chan error, len(uc.retryQueue[i])+len(posts[i]))
-		messageIDChan := make(chan int, len(posts[i]))
 
 		newRetryQueue := []*gateway.HackingPost{}
 
@@ -159,21 +158,13 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 				errsChan <- fmt.Errorf("failed to process post %s: %w", post.TxHash, err)
 				uc.retryQueue[i] = append(uc.retryQueue[i], post)
 			}
-			messageIDChan <- post.MessageID
 		}
 
 		close(errsChan)
-		close(messageIDChan)
 
 		var errors []error
 		for err := range errsChan {
 			errors = append(errors, err)
-		}
-
-		for messageID := range messageIDChan {
-			if messageID > gw.LastMessageID() {
-				gw.SetLastMessageID(messageID)
-			}
 		}
 
 		allErrors = append(allErrors, errors...)
@@ -221,13 +212,12 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 	var allErrors []error
 	var allProcessedCount int
 
-	for i, gw := range uc.telegramGateways {
+	for i := range uc.telegramGateways {
 		if len(posts[i]) == 0 && len(uc.retryQueue[i]) == 0 {
 			continue
 		}
 
 		errsChan = make(chan error, len(uc.retryQueue[i])+len(posts[i]))
-		messageIDChan := make(chan int, len(posts[i]))
 
 		newRetryQueue := []*gateway.HackingPost{}
 		log.Printf("Start: %d posts in retry queue", len(uc.retryQueue[i]))
@@ -252,23 +242,15 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 				errsChan <- fmt.Errorf("failed to process post %s: %w", post.TxHash, err)
 				uc.retryQueue[i] = append(uc.retryQueue[i], post)
 			}
-			messageIDChan <- post.MessageID
 		}
 
 		log.Printf("End: %d posts in retry queue", len(uc.retryQueue[i]))
 
 		close(errsChan)
-		close(messageIDChan)
 
 		var errors []error
 		for err := range errsChan {
 			errors = append(errors, err)
-		}
-
-		for messageID := range messageIDChan {
-			if messageID > gw.LastMessageID() {
-				gw.SetLastMessageID(messageID)
-			}
 		}
 
 		allErrors = append(allErrors, errors...)
