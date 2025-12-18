@@ -404,217 +404,6 @@ func TestSetTagToCache(t *testing.T) {
 	}
 }
 
-// ==================== State Management Tests ====================
-
-func TestSetLastMessageIDToGateway(t *testing.T) {
-	tests := []struct {
-		name               string
-		channelUsernames   []string
-		existingStatus     map[string]*entity.TelegramChannel
-		getStatusError     error
-		storeStatusError   error
-		wantErr            bool
-		expectedLastMsgIDs map[string]int
-	}{
-		{
-			name:             "existing channels",
-			channelUsernames: []string{"channel1", "channel2"},
-			existingStatus: map[string]*entity.TelegramChannel{
-				"channel1": {ChannelUsername: "channel1", LastMessageID: 100},
-				"channel2": {ChannelUsername: "channel2", LastMessageID: 200},
-			},
-			getStatusError:   nil,
-			storeStatusError: nil,
-			wantErr:          false,
-			expectedLastMsgIDs: map[string]int{
-				"channel1": 100,
-				"channel2": 200,
-			},
-		},
-		{
-			name:             "new channels",
-			channelUsernames: []string{"newchannel"},
-			existingStatus:   map[string]*entity.TelegramChannel{},
-			getStatusError:   nil,
-			storeStatusError: nil,
-			wantErr:          false,
-			expectedLastMsgIDs: map[string]int{
-				"newchannel": 0,
-			},
-		},
-		{
-			name:               "get status error",
-			channelUsernames:   []string{"channel1"},
-			existingStatus:     nil,
-			getStatusError:     errors.New("database error"),
-			storeStatusError:   nil,
-			wantErr:            true,
-			expectedLastMsgIDs: nil,
-		},
-		{
-			name:               "store status error for new channel",
-			channelUsernames:   []string{"newchannel"},
-			existingStatus:     map[string]*entity.TelegramChannel{},
-			getStatusError:     nil,
-			storeStatusError:   errors.New("store error"),
-			wantErr:            true,
-			expectedLastMsgIDs: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &mockHackingRepository{
-				getChannelStatusByUsernameFunc: func(ctx context.Context, username string) (*entity.TelegramChannel, error) {
-					if tt.getStatusError != nil {
-						return nil, tt.getStatusError
-					}
-					return tt.existingStatus[username], nil
-				},
-				storeChannelStatusFunc: func(ctx context.Context, channelStatus *entity.TelegramChannel) error {
-					return tt.storeStatusError
-				},
-			}
-
-			var gateways []gateway.TelegramHackingPostGateway
-			mockGateways := make(map[string]*mockTelegramHackingPostGateway)
-			for _, username := range tt.channelUsernames {
-				mockGW := &mockTelegramHackingPostGateway{
-					channelUsername: username,
-				}
-				mockGateways[username] = mockGW
-				gateways = append(gateways, mockGW)
-			}
-
-			uc := NewHackingUsecase(mockRepo, gateways, nil)
-			ctx := context.Background()
-
-			err := uc.SetLastMessageIDToGateway(ctx)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SetLastMessageIDToGateway() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if !tt.wantErr && tt.expectedLastMsgIDs != nil {
-				for username, expectedID := range tt.expectedLastMsgIDs {
-					if mockGW, ok := mockGateways[username]; ok {
-						actualID := mockGW.LastMessageID()
-						if actualID != expectedID {
-							t.Errorf("Gateway %s LastMessageID = %d, want %d", username, actualID, expectedID)
-						}
-					}
-				}
-			}
-		})
-	}
-}
-
-func TestStoreLastMessageID(t *testing.T) {
-	tests := []struct {
-		name              string
-		channelUsernames  []string
-		currentLastMsgIDs map[string]int
-		existingStatus    map[string]*entity.TelegramChannel
-		getStatusError    error
-		storeStatusError  error
-		updateStatusError error
-		wantErr           bool
-	}{
-		{
-			name:             "update existing channels",
-			channelUsernames: []string{"channel1", "channel2"},
-			currentLastMsgIDs: map[string]int{
-				"channel1": 150,
-				"channel2": 250,
-			},
-			existingStatus: map[string]*entity.TelegramChannel{
-				"channel1": {ChannelUsername: "channel1", LastMessageID: 100},
-				"channel2": {ChannelUsername: "channel2", LastMessageID: 200},
-			},
-			getStatusError:    nil,
-			storeStatusError:  nil,
-			updateStatusError: nil,
-			wantErr:           false,
-		},
-		{
-			name:             "store new channels",
-			channelUsernames: []string{"newchannel"},
-			currentLastMsgIDs: map[string]int{
-				"newchannel": 50,
-			},
-			existingStatus:    map[string]*entity.TelegramChannel{},
-			getStatusError:    nil,
-			storeStatusError:  nil,
-			updateStatusError: nil,
-			wantErr:           false,
-		},
-		{
-			name:             "get status error",
-			channelUsernames: []string{"channel1"},
-			currentLastMsgIDs: map[string]int{
-				"channel1": 150,
-			},
-			existingStatus:    nil,
-			getStatusError:    errors.New("database error"),
-			storeStatusError:  nil,
-			updateStatusError: nil,
-			wantErr:           true,
-		},
-		{
-			name:             "update status error",
-			channelUsernames: []string{"channel1"},
-			currentLastMsgIDs: map[string]int{
-				"channel1": 150,
-			},
-			existingStatus: map[string]*entity.TelegramChannel{
-				"channel1": {ChannelUsername: "channel1", LastMessageID: 100},
-			},
-			getStatusError:    nil,
-			storeStatusError:  nil,
-			updateStatusError: errors.New("update error"),
-			wantErr:           true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &mockHackingRepository{
-				getChannelStatusByUsernameFunc: func(ctx context.Context, username string) (*entity.TelegramChannel, error) {
-					if tt.getStatusError != nil {
-						return nil, tt.getStatusError
-					}
-					return tt.existingStatus[username], nil
-				},
-				storeChannelStatusFunc: func(ctx context.Context, channelStatus *entity.TelegramChannel) error {
-					return tt.storeStatusError
-				},
-				updateChannelStatusFunc: func(ctx context.Context, channelStatus *entity.TelegramChannel) error {
-					return tt.updateStatusError
-				},
-			}
-
-			var gateways []gateway.TelegramHackingPostGateway
-			for _, username := range tt.channelUsernames {
-				mockGW := &mockTelegramHackingPostGateway{
-					channelUsername: username,
-					lastMessageID:   tt.currentLastMsgIDs[username],
-				}
-				gateways = append(gateways, mockGW)
-			}
-
-			uc := NewHackingUsecase(mockRepo, gateways, nil)
-			ctx := context.Background()
-
-			err := uc.StoreLastMessageID(ctx)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("StoreLastMessageID() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 // ==================== Process Single Post Tests ====================
 
 func TestProcessSinglePost(t *testing.T) {
@@ -719,7 +508,6 @@ func TestScrapeAndStore(t *testing.T) {
 		processErrors      map[string]error // txHash -> error
 		wantProcessedCount int
 		wantErrorCount     int
-		wantLastMessageIDs []int
 	}{
 		{
 			name:        "success case with single gateway",
@@ -736,7 +524,6 @@ func TestScrapeAndStore(t *testing.T) {
 			processErrors:      map[string]error{},
 			wantProcessedCount: 3,
 			wantErrorCount:     0,
-			wantLastMessageIDs: []int{103},
 		},
 		{
 			name:        "success with multiple gateways",
@@ -757,7 +544,6 @@ func TestScrapeAndStore(t *testing.T) {
 			processErrors:      map[string]error{},
 			wantProcessedCount: 5,
 			wantErrorCount:     0,
-			wantLastMessageIDs: []int{102, 203},
 		},
 		{
 			name:        "partial processing errors",
@@ -776,7 +562,6 @@ func TestScrapeAndStore(t *testing.T) {
 			},
 			wantProcessedCount: 2,
 			wantErrorCount:     1,
-			wantLastMessageIDs: []int{103},
 		},
 		{
 			name:        "get posts error",
@@ -790,7 +575,6 @@ func TestScrapeAndStore(t *testing.T) {
 			processErrors:      map[string]error{},
 			wantProcessedCount: 0,
 			wantErrorCount:     1,
-			wantLastMessageIDs: []int{0, 0},
 		},
 		{
 			name:               "no posts to process",
@@ -801,7 +585,6 @@ func TestScrapeAndStore(t *testing.T) {
 			processErrors:      map[string]error{},
 			wantProcessedCount: 0,
 			wantErrorCount:     0,
-			wantLastMessageIDs: []int{0},
 		},
 	}
 
@@ -859,14 +642,8 @@ func TestScrapeAndStore(t *testing.T) {
 				t.Errorf("ScrapeAndStore() errorCount = %d, want %d", len(errs), tt.wantErrorCount)
 			}
 
-			// Verify LastMessageID updates
-			for i, gw := range gateways {
-				actualID := gw.LastMessageID()
-				expectedID := tt.wantLastMessageIDs[i]
-				if actualID != expectedID {
-					t.Errorf("Gateway %d LastMessageID = %d, want %d", i, actualID, expectedID)
-				}
-			}
+			// LastMessageIDの更新責務はGatewayへ移動したため、
+			// Usecase側での検証は行いません。
 		})
 	}
 }
@@ -943,52 +720,7 @@ func TestScrapeAndStore_RetryQueue(t *testing.T) {
 	})
 }
 
-func TestScrapeAndStore_MessageIDUpdate(t *testing.T) {
-	t.Run("message ID updates to maximum", func(t *testing.T) {
-		mockRepo := &mockHackingRepository{
-			storeInfoFunc: func(ctx context.Context, info *entity.HackingInfo, tagNames []string) (int64, error) {
-				return 1, nil
-			},
-		}
-
-		mockGemini := &mockGeminiGateway{
-			analyzeAndExtractFunc: func(ctx context.Context, post *gateway.HackingPost) (*gateway.ExtractedHackingInfo, error) {
-				return &gateway.ExtractedHackingInfo{
-					Protocol: "TestProtocol",
-					Network:  "Ethereum",
-					Amount:   "$1000000",
-					TxHash:   post.TxHash,
-					TagNames: []string{"DeFi"},
-				}, nil
-			},
-		}
-
-		mockGW := &mockTelegramHackingPostGateway{
-			channelUsername: "channel1",
-			lastMessageID:   50, // Starting ID
-			getPostsFunc: func(ctx context.Context, limit int) ([]*gateway.HackingPost, error) {
-				return []*gateway.HackingPost{
-					createTestHackingPost(55, "0xaaa111"),
-					createTestHackingPost(101, "0xbbb222"), // Maximum
-					createTestHackingPost(75, "0xccc333"),
-					createTestHackingPost(60, "0xddd444"),
-				}, nil
-			},
-		}
-
-		uc := NewHackingUsecase(mockRepo, []gateway.TelegramHackingPostGateway{mockGW}, mockGemini)
-		ctx := context.Background()
-
-		_, _ = uc.ScrapeAndStore(ctx, 10)
-
-		// Should update to maximum message ID
-		actualID := mockGW.LastMessageID()
-		expectedID := 101
-		if actualID != expectedID {
-			t.Errorf("LastMessageID = %d, want %d", actualID, expectedID)
-		}
-	})
-}
+// Usecase側でのLastMessageID更新テストは責務変更により削除しました。
 
 // ==================== InitialScrapeAndStore Tests ====================
 

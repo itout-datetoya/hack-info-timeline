@@ -106,6 +106,11 @@ func (g *telegramTransferPostGateway) convertMessages(history tg.MessagesMessage
 			} else {
 				log.Printf("Failed to parse transfer message with error: %v", err)
 			}
+
+			// 取得した投稿の中で最も新しい投稿のIDを更新
+			if message.ID > g.lastMessageID {
+				g.lastMessageID = message.ID
+			}
 		}
 	}
 	return posts, nil

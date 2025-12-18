@@ -211,6 +211,11 @@ func (g *telegramHackingPostGateway) convertMessages(ctx context.Context, histor
 			if g.oldestMessageID == 0 || message.ID < g.oldestMessageID {
 				g.oldestMessageID = message.ID
 			}
+
+			// 取得した投稿の中で最も新しい投稿のIDを更新
+			if message.ID > g.lastMessageID {
+				g.lastMessageID = message.ID
+			}
 		}
 	}
 	return posts, nil
