@@ -14,7 +14,6 @@ import (
 type TransferUsecase struct {
 	repo             repository.TransferRepository
 	telegramGateways []gateway.TelegramTransferPostGateway
-	mu               sync.Mutex
 }
 
 // 新しいTransferUsecaseを生成
@@ -105,9 +104,7 @@ func (uc *TransferUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, 
 				errsChan <- fmt.Errorf("failed to get posts from telegram: %w", err)
 				return
 			}
-			uc.mu.Lock()
 			posts[i] = newPosts
-			uc.mu.Unlock()
 		}(gw)
 	}
 

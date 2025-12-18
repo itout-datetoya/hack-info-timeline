@@ -17,7 +17,6 @@ type HackingUsecase struct {
 	telegramGateways []gateway.TelegramHackingPostGateway
 	geminiGateway    gateway.GeminiGateway
 	retryQueue       [][]*gateway.HackingPost
-	mu               sync.Mutex
 }
 
 // 新しいHackingUsecaseを生成
@@ -111,9 +110,7 @@ func (uc *HackingUsecase) ScrapeAndStore(ctx context.Context, limit int) (int, [
 				errsChan <- fmt.Errorf("failed to get posts from telegram: %w", err)
 				return
 			}
-			uc.mu.Lock()
 			posts[i] = newPosts
-			uc.mu.Unlock()
 		}(gw)
 	}
 
@@ -205,9 +202,7 @@ func (uc *HackingUsecase) InitialScrapeAndStore(ctx context.Context, limit int) 
 				errsChan <- fmt.Errorf("failed to get posts from telegram: %w", err)
 				return
 			}
-			uc.mu.Lock()
 			posts[i] = newPosts
-			uc.mu.Unlock()
 		}(gw)
 	}
 
